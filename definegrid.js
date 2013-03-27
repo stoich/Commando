@@ -168,6 +168,9 @@ boardLayer.on('click tap', function(e) {
 
            var anim = new Kinetic.Animation(function(frame) {
 			   boardLayer.setListening(false);
+			   var linearSpeed = 200;
+			   var linearDistEachFrame = linearSpeed * frame.timeDiff / 1000;
+		  
                if (current_soldier.getX() == x && current_soldier.getY() == y ) {
                    anim.stop();
                    current_soldier.stop();
@@ -176,7 +179,7 @@ boardLayer.on('click tap', function(e) {
                }
 
                if(current_soldier.getX() != x && current_soldier.getX() < x){
-                   var nextStep = current_soldier.getX()+(frame.timeDiff + 70)/frame.timeDiff;
+                   var nextStep = current_soldier.getX()+linearDistEachFrame;
                    if(nextStep > x){
                        current_soldier.setX(x);
                    }else{
@@ -185,7 +188,7 @@ boardLayer.on('click tap', function(e) {
                }
 
                if(current_soldier.getY() != y && current_soldier.getY() < y){
-                   var nextStep = current_soldier.getY()+ (frame.timeDiff + 70)/frame.timeDiff;
+                   var nextStep = current_soldier.getY()+ linearDistEachFrame;
                    if(nextStep > y){
                        current_soldier.setY(y);
                    }else{
@@ -194,7 +197,7 @@ boardLayer.on('click tap', function(e) {
                }
 
                if(current_soldier.getX() != x  && current_soldier.getX() > x){
-                   var nextStep = current_soldier.getX()-(frame.timeDiff + 70)/frame.timeDiff;
+                   var nextStep = current_soldier.getX()-linearDistEachFrame;
                    if(nextStep < x){
                        current_soldier.setX(x);
                    }else{
@@ -203,7 +206,7 @@ boardLayer.on('click tap', function(e) {
                }
 
                if(current_soldier.getY() != y && current_soldier.getY() > y){
-                   var nextStep = current_soldier.getY()-(frame.timeDiff + 70)/frame.timeDiff;
+                   var nextStep = current_soldier.getY()-linearDistEachFrame;
                    if(nextStep < y){
                        current_soldier.setY(y);
                    }else{
