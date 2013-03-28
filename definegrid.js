@@ -102,25 +102,35 @@ imageObj.src = 'soldier.png';
 		
 var stage = new Kinetic.Stage({
     container: 'container',
-    width: 800,
-    height: 800
+    width: 850,
+    height: 550
 });
-
 
 var circle = new Kinetic.Circle({
 	name: 'circ',
-    x: 750,
-    y: stage.getHeight() / 2,
+    x: 750  ,
+    y: stage.getHeight() /2,
     radius: 40,
     fill: 'red',
     stroke: 'black',
     strokeWidth: 4	
 });
 
+var endturnbutton = new Kinetic.Rect({
+    x: 700,
+    y: stage.getHeight() /2+85,
+    width: 100,
+    height: 50,
+    fill: 'green',
+    stroke: 'black',
+    strokeWidth: 4
+});
+
 var boardLayer = new Kinetic.Layer();
 createBoardLayer();
 var current_soldier;
 
+var currentTurn= 0;
 
 boardLayer.on("mouseover", function (e) {
     var shape = e.shape;
@@ -137,7 +147,7 @@ boardLayer.on("mouseout", function (e) {
     var shape = e.shape;
 	if(shape.getName() == "hex"){
 		shape.setFill("white");
-		boardLayer.add(shape);
+        boardLayer.add(shape);
 		shape.moveToBottom();
 		stage.add(boardLayer);
 		
@@ -234,31 +244,31 @@ boardLayer.on('click tap', function(e) {
 				frameRate: 7
 			});
 
-			soldier.name = getName(5,10);
-			soldier.id = "sol";
+		    soldier.name = getName(5,10);    //name and setName are different things!
+            soldier.setName("sol");          //name and setName are different things!
+
 			console.log("Created: "+soldier.name);
+
 			console.log(soldier.getX() + " : " + soldier.getY())
-			soldier.on('mousedown', function(e) {
-				current_soldier = e.shape;
-				current_soldier.selected = 1;
-				console.log("Clicked on:"+current_soldier.name);
-			});
 			
 			// add the shape to the layer
 			boardLayer.add(soldier);
 			// add the layer to the stage
 			stage.add(boardLayer);
-			soldier.start();			
-			
+			soldier.start();
 	}
 	
-	if(shape.getId() == "sol"){
+	if(shape.getName() == "sol"){
 		current_soldier = shape;
 		current_soldier.selected = 1;
 		console.log("Clicked on:"+current_soldier.name);
 	}
 });
+
 boardLayer.add(circle);
+boardLayer.add(endturnbutton);
+document.getElementById("endturntext").style.left  = endturnbutton.getX()+6+"px";
+document.getElementById("endturntext").style.top  =  endturnbutton.getY()+35+"px";
 
 imageObj.onload = function(){
 	stage.add(boardLayer);
