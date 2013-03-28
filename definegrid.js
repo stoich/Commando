@@ -97,9 +97,6 @@ var animations = {
         }]
     };
 
-var imageObj = new Image();
-imageObj.src = 'soldier.png';
-		
 var stage = new Kinetic.Stage({
     container: 'container',
     width: 850,
@@ -119,6 +116,7 @@ var circle = new Kinetic.Circle({
 var endturnbutton = new Kinetic.Rect({
     x: 700,
     y: stage.getHeight() /2+85,
+    name: "endturn",
     width: 100,
     height: 50,
     fill: 'green',
@@ -128,9 +126,9 @@ var endturnbutton = new Kinetic.Rect({
 
 var boardLayer = new Kinetic.Layer();
 createBoardLayer();
-var current_soldier;
 
-var currentTurn= 0;
+var current_soldier;
+var currentTurn=0;
 
 boardLayer.on("mouseover", function (e) {
     var shape = e.shape;
@@ -139,8 +137,8 @@ boardLayer.on("mouseover", function (e) {
 		boardLayer.add(shape);
 		shape.moveToBottom();
 		stage.add(boardLayer);
-		
-	}    
+
+	}
 });
 
 boardLayer.on("mouseout", function (e) {
@@ -150,8 +148,8 @@ boardLayer.on("mouseout", function (e) {
         boardLayer.add(shape);
 		shape.moveToBottom();
 		stage.add(boardLayer);
-		
-	}    
+
+	}
 });
 
 boardLayer.on('click tap', function(e) {       
@@ -233,9 +231,11 @@ boardLayer.on('click tap', function(e) {
 	
 	if(shape.getName() == "circ"){
 	    var randomHex = boardLayer.get("#tile-row"+Math.floor((Math.random()*9)+1)+"-col-"+Math.floor((Math.random()*9)+1))[0];
-		console.log("Create human clicked");		
-			    
-			var soldier = new Kinetic.Sprite({
+		console.log("Create human clicked");
+
+        var imageObj = new Image();
+
+        var soldier = new Kinetic.Sprite({
 				x : randomHex.getAbsolutePosition().x-25,
 				y : randomHex.getAbsolutePosition().y-25,
 				image: imageObj,
@@ -244,12 +244,19 @@ boardLayer.on('click tap', function(e) {
 				frameRate: 7
 			});
 
+        //Set unit affinity (1 or 0) and set animation
+            if (currentTurn == 1) {
+            imageObj.src = 'soldier1.png';
+            soldier.affinity = 1;
+            }  else {
+                imageObj.src = 'soldier0.png';
+                soldier.affinity = 0;
+            }
+
 		    soldier.name = getName(5,10);    //name and setName are different things!
             soldier.setName("sol");          //name and setName are different things!
 
-			console.log("Created: "+soldier.name);
-
-			console.log(soldier.getX() + " : " + soldier.getY())
+			console.log("Created: "+soldier.name +" at "+soldier.getX() + " : " + soldier.getY());
 			
 			// add the shape to the layer
 			boardLayer.add(soldier);
@@ -260,19 +267,39 @@ boardLayer.on('click tap', function(e) {
 	
 	if(shape.getName() == "sol"){
 		current_soldier = shape;
+
+        if (current_soldier.affinity == currentTurn)      {
 		current_soldier.selected = 1;
-		console.log("Clicked on:"+current_soldier.name);
+		console.log("Selected: "+current_soldier.name);
+        }
+        else {
+            console.log("Unable to select: Unit belongs to opposing side")
+        }
 	}
+
+    if(shape.getName() == "endturn"){
+       if(currentTurn == 1) {
+           currentTurn=0;
+           console.log("Army 1 turn ended. Army 0 to move");
+       }  else {
+           currentTurn = 1;
+           console.log("Army 0 turn ended. Army 1 to move");
+       }
+
+    }
 });
 
 boardLayer.add(circle);
-boardLayer.add(endturnbutton);
-document.getElementById("endturntext").style.left  = endturnbutton.getX()+6+"px";
-document.getElementById("endturntext").style.top  =  endturnbutton.getY()+35+"px";
+//Set generate button label
+document.getElementById("createSoldiertext").style.left  = circle.getX()-60+"px";
+document.getElementById("createSoldiertext").style.top  =  circle.getY()-30+"px";
 
-imageObj.onload = function(){
-	stage.add(boardLayer);
-};
+boardLayer.add(endturnbutton);
+//Set end turn button label
+document.getElementById("endturntext").style.left  = endturnbutton.getX()+6+"px";
+document.getElementById("endturntext").style.top  =  endturnbutton.getY()+"px";
+
+stage.add(boardLayer);
 
 function createBoardLayer(rows, cols) {
     var rows = rows || 10;

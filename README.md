@@ -1,4 +1,4 @@
 StoichCommando
 ==============
 
-turn-based HTML5 game
+Turn-based HTML5 game
