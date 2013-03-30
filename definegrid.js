@@ -1,3 +1,8 @@
+var imageObj0 = new Image();
+imageObj0.src = 'soldier0.png';
+var imageObj1 = new Image();
+imageObj1.src = 'soldier1.png';
+
 var animations = {
 		idle: [{
 			x: 0,
@@ -133,11 +138,9 @@ var currentTurn=0;
 boardLayer.on("mouseover", function (e) {
     var shape = e.shape;
 	if(shape.getName() == "hex"){
-		shape.setFill("#E0EBEB");
-		boardLayer.add(shape);
-		shape.moveToBottom();
-		stage.add(boardLayer);
-
+        shape.setFill("#E0EBEB");
+        shape.moveToBottom();
+     //   stage.add(boardLayer);
 	}
 });
 
@@ -145,15 +148,12 @@ boardLayer.on("mouseout", function (e) {
     var shape = e.shape;
 	if(shape.getName() == "hex"){
 		shape.setFill("white");
-        boardLayer.add(shape);
-		shape.moveToBottom();
-		stage.add(boardLayer);
-
+        shape.moveToBottom();
 	}
 });
 
-boardLayer.on('click tap', function(e) {       
-		
+boardLayer.on('click tap', function(e) {
+
     var shape = e.shape;		
 		
 	if(shape.getName() == "hex"){
@@ -161,7 +161,10 @@ boardLayer.on('click tap', function(e) {
 
        if (current_soldier.selected==1) {
 
-           console.log("Defining solider animation");
+           console.log("Defining animation for "+current_soldier.name);
+
+           current_soldier.currentHexId = shape.getId();
+           console.log(current_soldier.name+" current location within grid set as "+shape.getId());
 
            current_soldier.start();
 
@@ -224,56 +227,70 @@ boardLayer.on('click tap', function(e) {
 
            }, boardLayer);
 
-           anim.start();                 
+           anim.start();
            current_soldier.selected=0;
+       } else {
+           document.getElementById("name").innerText = "";
        }
 	}
 	
 	if(shape.getName() == "circ"){
-	    var randomHex = boardLayer.get("#tile-row"+Math.floor((Math.random()*9)+1)+"-col-"+Math.floor((Math.random()*9)+1))[0];
-		console.log("Create human clicked");
+    console.log("Generate unit clicked");
 
+    var randomHex;
+    //Loop to make sure random combination exists.
+    while (randomHex == undefined) {
+        randomHex = boardLayer.get("#"+getRandom(-4,9)+","+getRandom(0,9))[0];
+    }
         var imageObj = new Image();
+
+        var current_image;  //soldier anition
+
+        if (currentTurn == 1) {
+            current_image = imageObj1;
+        }  else {
+            current_image = imageObj0;
+        }
 
         var soldier = new Kinetic.Sprite({
 				x : randomHex.getAbsolutePosition().x-25,
 				y : randomHex.getAbsolutePosition().y-25,
-				image: imageObj,
+			    image: current_image,
 				animation: 'idle',
 				animations: animations,
 				frameRate: 7
 			});
 
-        //Set unit affinity (1 or 0) and set animation
-            if (currentTurn == 1) {
-            imageObj.src = 'soldier1.png';
-            soldier.affinity = 1;
-            }  else {
-                imageObj.src = 'soldier0.png';
-                soldier.affinity = 0;
-            }
+        //Set unit affinity (1 or 0)
+        soldier.affinity = currentTurn;
 
 		    soldier.name = getName(5,10);    //name and setName are different things!
             soldier.setName("sol");          //name and setName are different things!
+            soldier.currentHexId = randomHex.getId(); //Which hex does soldier belong to
 
 			console.log("Created: "+soldier.name +" at "+soldier.getX() + " : " + soldier.getY());
-			
-			// add the shape to the layer
+            console.log(soldier.name+"current location within grid set as "+soldier.currentHexId);
+
+        // add the shape to the layer
 			boardLayer.add(soldier);
 			// add the layer to the stage
 			stage.add(boardLayer);
 			soldier.start();
 	}
-	
+
 	if(shape.getName() == "sol"){
 		current_soldier = shape;
 
         if (current_soldier.affinity == currentTurn)      {
 		current_soldier.selected = 1;
+
+        drawMovementRadius(current_soldier.currentHexId,3);
+        document.getElementById("name").innerText = current_soldier.name;
 		console.log("Selected: "+current_soldier.name);
         }
         else {
-            console.log("Unable to select: Unit belongs to opposing side")
+            document.getElementById("name").innerText = current_soldier.name;
+            console.log("Unable to select "+current_soldier.name+" : Unit belongs to opposing side")
         }
 	}
 
@@ -287,7 +304,42 @@ boardLayer.on('click tap', function(e) {
        }
 
     }
+
 });
+
+function getRandom(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+function drawMovementRadius(currentHexId,unitAP){
+if(unitAP == 0) {return;}
+console.log("Drawing radius for possible unit movement") ;
+
+var x = parseInt(currentHexId.split(",")[0]) ;
+var y = parseInt(currentHexId.split(",")[1]) ;
+
+var neighborHex = new Array();
+
+//Get all the hexes that next to the root hex
+neighborHex[0] = boardLayer.get("#"+ x   +","+(y-1))[0];
+neighborHex[1] = boardLayer.get("#"+(x+1)+","+(y-1))[0];
+neighborHex[2] = boardLayer.get("#"+(x+1)+","+  y  )[0];
+neighborHex[3] = boardLayer.get("#"+  x  +","+(y+1))[0];
+neighborHex[4] = boardLayer.get("#"+(x-1)+","+(y+1))[0];
+neighborHex[5] = boardLayer.get("#"+(x-1)+","+  y  )[0];
+
+//Mark all neighbours
+var i;
+for (i=0;i<neighborHex.length;i++)
+{
+    var shape = neighborHex[i];
+    if (neighborHex[i] != undefined){
+    shape.setFill("tan");
+    shape.moveToBottom();
+    drawMovementRadius(shape.getId(),unitAP-1);
+    }
+}
+
+}
 
 boardLayer.add(circle);
 //Set generate button label
@@ -328,7 +380,7 @@ function createBoardLayer(rows, cols) {
             }
 
             var hexagon = new Kinetic.RegularPolygon({
-                id: "tile-row" + colIdx + "-col-" + rowIdx,
+             //   id: "tile-row" + colIdx + "-col-" + rowIdx,
                 x: x,
                 y: y,
                 sides: 6,
@@ -336,11 +388,42 @@ function createBoardLayer(rows, cols) {
                 stroke: strokeColor,
                 strokeWidth: 1,
 				name: 'hex'
-            });  
-			
-			hexagon.moveToBottom();
+            });
+
+            //"Strighten" hex grid
+            if (colIdx %2 == 0) {
+              hexagon.setId(rowIdx-colIdx/2 + "," +colIdx);
+            }   else {
+                hexagon.setId(rowIdx -(colIdx-1)/2 + "," +colIdx);
+            }
+
+           //Grid numbering. Uncomment this to see x,y,z indexing
+           /*var complexText = new Kinetic.Text({
+                x: x-10,
+                y: y-10,
+         //       text: rowIdx + "," +colIdx ,
+                fontSize: 12,
+                fontFamily: 'Calibri',
+                fill: '#555',
+                width: 30    ,
+                padding: 0,
+                align: 'center'
+            });
+
+            if (colIdx %2 == 0) {
+                var x = rowIdx-colIdx/2;
+                var y =  colIdx;
+                complexText.setText(x+ "," +y+","+(-x-y));
+            }   else {
+                var x = rowIdx -(colIdx-1)/2
+                var y =  colIdx;
+                complexText.setText(x + "," +y+","+(-x-y));
+            }
+
+            boardLayer.add(complexText);*/
+
+            hexagon.moveToBottom();
             boardLayer.add(hexagon);
-			
         }
     }	
 }
