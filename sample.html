@@ -4,24 +4,27 @@
 
     <title>hex grid sample</title>
     <script src="kinetic-v4.3.3.min.js"></script>
-    <script src="namegen.js"></script>
-    <script src="object-watch.js"></script>
-    <link rel="stylesheet" type="text/css" href="styles/sheet1.css">
+    <script src="namegen.js"></script>    <link rel="stylesheet" type="text/css" href="styles/sheet1.css">
     <link rel="stylesheet" href="styles/kendo.common.min.css">
     <link rel="stylesheet" href="styles/kendo.default.min.css">
 
 </head>
 <body>
-    <div id="container" class="noselect"><div>
+
+    <div id="container" class="noselect">
+
+    <div>
     <b id="endturntext"       class="label"> End Turn</b>
     <b id="createSoldiertext" class="label"> Generate Unit</b>
     </div>
-    <script src="definegrid.js"></script>
-
+		
+    <div id="unitstats" style="position:absolute">
     <div class="k-block"><div class="k-header"><b class="label">Name</b></div><b id="name"></b></div>
     <br>
     <div class="k-block"><div class="k-header"><b class="label">Action points remaining</b></div><b id="ap"></b></div>
-
-
+    </div> 
+	
+    <script src="definegrid.js"></script>
+	
 </body>
 </html>
