@@ -111,6 +111,96 @@ var animations = {
             y: 50,
             width: 50,
             height: 50
+        }],
+        attack_gun: [{
+        x: 0,
+        y: 100,
+        width: 50,
+        height: 50
+    }, {
+        x: 50,
+        y: 100,
+        width: 50,
+        height: 50
+    }, {
+        x: 100,
+        y: 100,
+        width: 50,
+        height: 50
+    },
+        {
+            x: 150,
+            y: 100,
+            width: 50,
+            height: 50
+        },
+        {
+            x: 200,
+            y: 100,
+            width: 50,
+            height: 50
+        },
+        {
+            x: 250,
+            y: 100,
+            width: 50,
+            height: 50
+        },{
+            x: 300,
+            y: 100,
+            width: 50,
+            height: 50
+        },
+        {
+            x: 350,
+            y: 100,
+            width: 50,
+            height: 50
+        }],
+        attack_axe: [{
+        x: 0,
+        y: 200,
+        width: 50,
+        height: 50
+    }, {
+        x: 50,
+        y: 200,
+        width: 50,
+        height: 50
+    }, {
+        x: 100,
+        y: 200,
+        width: 50,
+        height: 50
+    },
+        {
+            x: 150,
+            y: 200,
+            width: 50,
+            height: 50
+        },
+        {
+            x: 200,
+            y: 200,
+            width: 50,
+            height: 50
+        },
+        {
+            x: 250,
+            y: 200,
+            width: 50,
+            height: 50
+        },{
+            x: 300,
+            y: 200,
+            width: 50,
+            height: 50
+        },
+        {
+            x: 350,
+            y: 200,
+            width: 50,
+            height: 50
         }]
     };
 
@@ -122,7 +212,7 @@ var stage = new Kinetic.Stage({
 
 var shootbutton   = new Kinetic.Rect({  //Ranged attack button
     x:692,
-    y: stage.getHeight()/2-155,
+    y: stage.getHeight()/2-105,
     name: "shootbutton",
     id:   "control",
     width: 100,
@@ -134,7 +224,7 @@ var shootbutton   = new Kinetic.Rect({  //Ranged attack button
 
 var meleebutton   =      new Kinetic.Rect({   //Melee attach button
     x: 692,
-    y: stage.getHeight()/2-100,
+    y: stage.getHeight()/2-50,
     name: "meleebutton",
     id:   "control",
     width: 100,
@@ -146,7 +236,7 @@ var meleebutton   =      new Kinetic.Rect({   //Melee attach button
 
 var circle = new Kinetic.Rect({ //Used to be a circle... Generate unit button
     x:692  ,
-    y: stage.getHeight() /2-45,
+    y: stage.getHeight() /2+5,
     name: 'circ',
     id:   "control",
     width: 100,
@@ -158,7 +248,7 @@ var circle = new Kinetic.Rect({ //Used to be a circle... Generate unit button
 
 var endturnbutton = new Kinetic.Rect({    //End turn button
     x:692,
-    y: stage.getHeight() /2+10,
+    y: stage.getHeight() /2+60,
     name: "endturn",
     id:   "control",
     width: 100,
@@ -206,7 +296,7 @@ boardLayer.on('click tap', function(e) {
 	if(shape.getName() == "hex"){
        console.log("Clicked on hex:"+shape.getId());
 
-       if (current_soldier != undefined) { //Time to move soldier
+       if (current_soldier != undefined && icon != undefined && icon.getImage() == moveIconImage) { //Time to move soldier if we're in Move mode
  
        var distance = calculateDistance(current_soldier, shape);
 	   console.log("Distance for requested movement calculated as:"+distance);
@@ -234,13 +324,10 @@ boardLayer.on('click tap', function(e) {
 	
 	if(shape.getName() == "circ"){
     console.log("Generate unit clicked");
+    highlightButtonOnClick(shape)
 
     var randomHex;
-	
-	function getRandom(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-	
+
     //Loop to make sure random combination exists.
     while (randomHex == undefined) {
         randomHex = boardLayer.get("#"+getRandom(-4,9)+","+getRandom(0,9))[0];
@@ -267,6 +354,7 @@ boardLayer.on('click tap', function(e) {
         //Set unit affinity (1 or 0)
         soldier.affinity = currentTurn;
 		soldier.AP = 3;
+        soldier.HP = 100;
 
 		    soldier.name = getName(5,10);    //name and setName are different things!
             soldier.setName("sol");          //name and setName are different things!
@@ -282,12 +370,14 @@ boardLayer.on('click tap', function(e) {
 			soldier.start();
 	}
 
-	if(shape.getName() == "sol"){	
+	if(shape.getName() == "sol"){
+        highlightButtonOnClick(shape)
 		
 		document.getElementById("name").textContent = shape.name;
 		document.getElementById("ap").textContent = shape.AP;
+        document.getElementById("hp").textContent = shape.HP;
 
-        if (shape.affinity == currentTurn)      {	
+        if (shape.affinity == currentTurn)      {	   //You clicked on a friendly
         
 		console.log("Selected: "+shape.name);
 		current_soldier = shape; //Unit is now selected;	
@@ -295,24 +385,58 @@ boardLayer.on('click tap', function(e) {
 		console.log("Drawing radius for possible unit movement") ;
         removeRadius("tan");
         removeRadius("crimson");
+
+         if (current_soldier.AP != 0) {
         drawRadius(shape.currentHexId,current_soldier.AP,"tan");
         console.log("Adding action icon to unit");
-
         setIcon(current_soldier,moveIconImage);
 
         boardLayer.draw();
+         }   else {
+             console.log("Out of AP for this turn");
+         }
+
            }
-        else {
-           console.log("Unable to select "+shape.name+" : Unit belongs to opposing side")
+        else { //You clicked on an enemy
+
+           if (icon != undefined && icon.getImage() == gunIconImage && calculateDistance(current_soldier, shape)<3) {
+               console.log("Preparing to fire at enemy");
+               attack(current_soldier,shape,"attack_gun",25);
+               current_soldier.AP = 0;
+               current_soldier = undefined;
+               removeRadius("crimson");
+               icon.hide();
+               icon = undefined;
+           }
+
+            if (icon != undefined && icon.getImage() == axeIconImage && calculateDistance(current_soldier, shape)<2) {
+                console.log("Preparing to melee enemy");
+                attack(current_soldier,shape,"attack_axe",50);
+                current_soldier.AP = 0;
+                current_soldier = undefined;
+                removeRadius("crimson");
+                icon.hide();
+                icon = undefined;
+            }
+
+            if (icon == undefined || icon.getImage() == moveIconImage) {
+                    console.log("Unable to select "+shape.name+" : Unit belongs to opposing side")
+            }
+
+
         }
 		
 	}
 
     if(shape.getName() == "endturn"){
+    highlightButtonOnClick(shape);
+
     removeRadius("tan");
     removeRadius("crimson");
+    if (icon != undefined) {
     icon.hide();      //Remove icon
     icon = undefined;
+    }
 
     //Reset AP for all units on map
      var units = boardLayer.get('.sol');
@@ -332,20 +456,26 @@ boardLayer.on('click tap', function(e) {
 
     if(shape.getName() == "shootbutton") {
         console.log("Ranged attack button engaged");
+        highlightButtonOnClick(shape)
 
         if (current_soldier == undefined) {
             console.log("You have to select a unit before you can use ranged attack");
         } else {
         removeRadius("tan");
-        drawRadius(current_soldier.currentHexId,2,"crimson");  //Units can only attack 2 hexes away: hence AP=2
 
+        if ((current_soldier.AP != 0)) {
+        drawRadius(current_soldier.currentHexId,2,"crimson");  //Units can only attack 2 hexes away: hence AP=2
         setIcon(current_soldier,gunIconImage);
+        } else {
+            console.log("Out of AP - try next turn")
+        }
         //boardLayer.draw();
         }
     }
 
     if(shape.getName() == "meleebutton")  {
         console.log("Melee button engaged");
+        highlightButtonOnClick(shape)
 
         if (current_soldier == undefined) {
             console.log("You have to select a unit before you can use melee attack");
@@ -353,27 +483,71 @@ boardLayer.on('click tap', function(e) {
             removeRadius("tan");
             removeRadius("crimson");
 
-            drawRadius(current_soldier.currentHexId,1,"crimson");  //Units can only melee 1 hexes away: hence AP=1
-            setIcon(current_soldier,axeIconImage);
-            //boardLayer.draw();
+            if ((current_soldier.AP != 0)) {
+                drawRadius(current_soldier.currentHexId,1,"crimson");  //Units can only melee 1 hexes away: hence AP=1
+                setIcon(current_soldier,axeIconImage);
+                //boardLayer.draw();
+            } else {
+                console.log("Out of AP - try next turn")
+            }
         }
     }
 
 });
 
+function attack(current_soldier,target,animation,damage) {
+boardLayer.setListening(false);
+console.log("Starting attack animation for "+current_soldier.name);
+current_soldier.setAnimation(animation);
+current_soldier.start();
+
+var dmgTaken = damage+getRandom(0,10);      //Damage is slightly random
+target.HP = target.HP-dmgTaken;
+console.log("Target "+target.name + " has taken "+dmgTaken + " damage");
+console.log(target.name + " has "+target.HP + " HP left");
+
+/*if (animation == "attack_gun") {
+document.getElementById('gunaudio').play();
+}
+
+if (animation = "attack_axe") {
+    document.getElementById('axeaudio').play();
+}*/
+
+setTimeout(function(){
+    current_soldier.stop();
+    current_soldier.setAnimation('idle');
+    boardLayer.draw();},1000);
+    boardLayer.setListening(true);
+
+if (target.HP <1) {
+    console.log(target.name + " has been killed.");
+    target.remove();
+}
+}
+function getRandom(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 function calculateDistance(target,destination) {  
 	  var x1 = parseInt(target.currentHexId.split(",")[0]) ;
       var y1 = parseInt(target.currentHexId.split(",")[1]) ;
 	  var z1 = -x1-y1;
-	  
+
+      if(destination.getName() == "hex"){
 	  var x2 = parseInt(destination.getId().split(",")[0]) ;
       var y2 = parseInt(destination.getId().split(",")[1]) ;
-	  var z2 = -x2-y2;
+      }
+
+      if(destination.getName() == "sol"){
+        var x2 = parseInt(destination.currentHexId.split(",")[0]) ;
+        var y2 = parseInt(destination.currentHexId.split(",")[1]) ;
+      }
+      var z2 = -x2-y2;
 
 	  return Math.max(Math.abs((x2-x1)),Math.abs((y2-y1)),Math.abs((z2-z1)));
 }
 function createUnitAnimation(shape,current_soldier) {
-  console.log("Defining animation for "+current_soldier.name);
+console.log("Defining animation for "+current_soldier.name);
       
            console.log(current_soldier.name+" current location within grid set as "+shape.getId());
 
@@ -504,6 +678,15 @@ console.log("Generating icon for selected unit");
       //  boardLayer.add(icon);
         boardLayer.draw();
     }
+}
+function highlightButtonOnClick(shape) {
+        console.log("Highlight clicked button");
+        var previous = shape.getFill();
+        shape.setFill("DarkGray");
+        shape.setStroke("black");
+        setTimeout(function(){
+            shape.setStroke("grey");
+            shape.setFill(previous)},125    );
 }
 
 boardLayer.add(shootbutton);
