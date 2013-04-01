@@ -264,7 +264,7 @@ var boardLayer = new Kinetic.Layer();
 function APBar (xS, yS, ap){
 	this.background = new Kinetic.Rect({  
 					x: xS+40,
-					y: yS-20,
+					y: yS-15,
 					name: "APbar",
 					width: 25,
 					height: 25,
@@ -275,7 +275,7 @@ function APBar (xS, yS, ap){
 				});
 	this.text = new Kinetic.Text({
 					x: xS+48,
-					y: yS-17,
+					y: yS-12,
 					text: '' + ap,
 					fontSize: 18,
 					fontFamily: 'Calibri',
@@ -459,6 +459,7 @@ boardLayer.on('click tap', function(e) {
                console.log("Preparing to fire at enemy");
                attack(current_soldier,shape,"attack_gun",25);
                current_soldier.AP = 0;
+               current_soldier.showAPBar();
                current_soldier = undefined;
                removeRadius("crimson");
                icon.hide();
@@ -469,6 +470,7 @@ boardLayer.on('click tap', function(e) {
                 console.log("Preparing to melee enemy");
                 attack(current_soldier,shape,"attack_axe",50);
                 current_soldier.AP = 0;
+                current_soldier.showAPBar();
                 current_soldier = undefined;
                 removeRadius("crimson");
                 icon.hide();
@@ -498,6 +500,7 @@ boardLayer.on('click tap', function(e) {
      var units = boardLayer.get('.sol');
      for (var i=0;i<units.length;i++) {
         units[i].AP = 3;
+         units[i].showAPBar();
         }
 
        if(currentTurn == 1) {
@@ -724,15 +727,15 @@ console.log("Generating icon for selected unit");
             image: iconType
         });
 
-        icon.setX(target.getX()-10);
-        icon.setY(target.getY()-10);
+        icon.setX(target.getX()-15);
+        icon.setY(target.getY()-15);
         boardLayer.add(icon);
         boardLayer.draw();
     }   else {
         icon.show();
         icon.setImage(iconType);
-        icon.setX(target.getX()-10);
-        icon.setY(target.getY()-10);
+        icon.setX(target.getX()-15);
+        icon.setY(target.getY()-15);
         icon.moveToTop();
       //  boardLayer.add(icon);
         boardLayer.draw();
@@ -743,9 +746,11 @@ function highlightButtonOnClick(shape) {
         var previous = shape.getFill();
         shape.setFill("DarkGray");
         shape.setStroke("black");
+      //  boardLayer.draw();
         setTimeout(function(){
-            shape.setStroke("grey");
-            shape.setFill(previous)},125    );
+        shape.setStroke("grey");
+        shape.setFill(previous)},125    );
+       // boardLayer.draw();
 }
 
 boardLayer.add(shootbutton);
