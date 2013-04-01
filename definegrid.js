@@ -1,10 +1,19 @@
 //animation sheet for army 0
 var imageObj0 = new Image();
-imageObj0.src = 'soldier0.png';
+imageObj0.src = 'images/soldier0.png';
 
 //animation sheet for army 1
 var imageObj1 = new Image();
-imageObj1.src = 'soldier1.png';
+imageObj1.src = 'images/soldier1.png';
+
+var gunIconImage = new Image();
+gunIconImage.src = 'images/gun.png';
+
+var axeIconImage = new Image();
+axeIconImage.src = 'images/axe.png';
+
+var moveIconImage = new Image();
+moveIconImage.src = 'images/move.png';
 
 var animations = {
 		idle: [{
@@ -111,25 +120,52 @@ var stage = new Kinetic.Stage({
     height: 550
 });
 
-var circle = new Kinetic.Circle({
-	name: 'circ',
-    x: 750  ,
-    y: stage.getHeight() /2,
-    radius: 40,
-    fill: 'red',
-    stroke: 'black',
-    strokeWidth: 4	
-});
-
-var endturnbutton = new Kinetic.Rect({
-    x: 700,
-    y: stage.getHeight() /2+85,
-    name: "endturn",
+var shootbutton   = new Kinetic.Rect({  //Ranged attack button
+    x:692,
+    y: stage.getHeight()/2-155,
+    name: "shootbutton",
+    id:   "control",
     width: 100,
     height: 50,
-    fill: 'green',
-    stroke: 'black',
-    strokeWidth: 4
+    fill: 'gainsboro',
+    stroke: 'grey',
+    strokeWidth: 1
+});
+
+var meleebutton   =      new Kinetic.Rect({   //Melee attach button
+    x: 692,
+    y: stage.getHeight()/2-100,
+    name: "meleebutton",
+    id:   "control",
+    width: 100,
+    height: 50,
+    fill: 'gainsboro',
+    stroke: 'grey',
+    strokeWidth: 1
+});
+
+var circle = new Kinetic.Rect({ //Used to be a circle... Generate unit button
+    x:692  ,
+    y: stage.getHeight() /2-45,
+    name: 'circ',
+    id:   "control",
+    width: 100,
+    height: 50,
+    fill: 'gainsboro',
+    stroke: 'grey',
+    strokeWidth: 1
+});
+
+var endturnbutton = new Kinetic.Rect({    //End turn button
+    x:692,
+    y: stage.getHeight() /2+10,
+    name: "endturn",
+    id:   "control",
+    width: 100,
+    height: 50,
+    fill: 'gainsboro',
+    stroke: 'grey',
+    strokeWidth: 1
 });
 
 var boardLayer = new Kinetic.Layer();
@@ -137,29 +173,29 @@ createBoardLayer();
 
 var current_soldier;
 var currentTurn=0;
-
 var colorholder;
+var icon;
 
 boardLayer.on("mouseover", function (e) {
     var shape = e.shape;
 	if(shape.getName() == "hex"){
 	    colorholder = shape.getFill();
         shape.setFill("#E0EBEB");
-        shape.moveToBottom();
-     //   stage.add(boardLayer);
+      // shape.moveToBottom();
+      //stage.add(boardLayer);
 	}
 });
 
 boardLayer.on("mouseout", function (e) {
     var shape = e.shape;
 	if(shape.getName() == "hex"){
-	    if (colorholder == "tan") {
-		shape.setFill("tan");
-		}
-		else { 
-		shape.setFill("white");
-		}
-        shape.moveToBottom();
+
+	if (colorholder == "tan" || colorholder == "crimson") {
+	shape.setFill(colorholder);
+    return;
+	}
+
+    shape.setFill("white");
 	}
 });
 
@@ -179,12 +215,15 @@ boardLayer.on('click tap', function(e) {
 	   console.log("Not enough AP to reach destination hex!");
 	   } else {
  
-	   current_soldier.currentHexId = shape.getId(); //Set new location for soldier
-	   createUnitAnimation(shape,current_soldier);   //Animate soldier movement	   
-	   removeRadius();                               //Remove movement radius
-	   current_soldier.AP = current_soldier.AP-distance;   //Update AP
+	   current_soldier.currentHexId = shape.getId();        //Set new location for soldier
+	   createUnitAnimation(shape,current_soldier);          //Animate soldier movement
+	   removeRadius("tan");                                 //Remove movement radius
+       icon.hide();
+      //moveIcon.hide();                                   //Remove movement icon
+     //  boardLayer.draw();
+	   current_soldier.AP = current_soldier.AP-distance;    //Update AP
 	   document.getElementById("ap").innerText = current_soldier.AP; //Update AP in GUI
-	   current_soldier = undefined;                  //Unselect soldier
+	   current_soldier = undefined;                                    //Unselect soldier
 	   }
          
        } else {
@@ -245,17 +284,23 @@ boardLayer.on('click tap', function(e) {
 
 	if(shape.getName() == "sol"){	
 		
-		document.getElementById("name").innerText = shape.name;
-		document.getElementById("ap").innerText = shape.AP;
-			
+		document.getElementById("name").textContent = shape.name;
+		document.getElementById("ap").textContent = shape.AP;
+
         if (shape.affinity == currentTurn)      {	
         
 		console.log("Selected: "+shape.name);
 		current_soldier = shape; //Unit is now selected;	
 		
 		console.log("Drawing radius for possible unit movement") ;
-        drawMovementRadius(shape.currentHexId,current_soldier.AP);
-		boardLayer.draw();     
+        removeRadius("tan");
+        removeRadius("crimson");
+        drawRadius(shape.currentHexId,current_soldier.AP,"tan");
+        console.log("Adding action icon to unit");
+
+        setIcon(current_soldier,moveIconImage);
+
+        boardLayer.draw();
            }
         else {
            console.log("Unable to select "+shape.name+" : Unit belongs to opposing side")
@@ -264,6 +309,17 @@ boardLayer.on('click tap', function(e) {
 	}
 
     if(shape.getName() == "endturn"){
+    removeRadius("tan");
+    removeRadius("crimson");
+    icon.hide();      //Remove icon
+    icon = undefined;
+
+    //Reset AP for all units on map
+     var units = boardLayer.get('.sol');
+     for (var i=0;i<units.length;i++) {
+        units[i].AP = 3;
+        }
+
        if(currentTurn == 1) {
            currentTurn=0;
            console.log("Army 1 turn ended. Army 0 to move");
@@ -272,6 +328,35 @@ boardLayer.on('click tap', function(e) {
            console.log("Army 0 turn ended. Army 1 to move");
        }
 
+    }
+
+    if(shape.getName() == "shootbutton") {
+        console.log("Ranged attack button engaged");
+
+        if (current_soldier == undefined) {
+            console.log("You have to select a unit before you can use ranged attack");
+        } else {
+        removeRadius("tan");
+        drawRadius(current_soldier.currentHexId,2,"crimson");  //Units can only attack 2 hexes away: hence AP=2
+
+        setIcon(current_soldier,gunIconImage);
+        //boardLayer.draw();
+        }
+    }
+
+    if(shape.getName() == "meleebutton")  {
+        console.log("Melee button engaged");
+
+        if (current_soldier == undefined) {
+            console.log("You have to select a unit before you can use melee attack");
+        } else {
+            removeRadius("tan");
+            removeRadius("crimson");
+
+            drawRadius(current_soldier.currentHexId,1,"crimson");  //Units can only melee 1 hexes away: hence AP=1
+            setIcon(current_soldier,axeIconImage);
+            //boardLayer.draw();
+        }
     }
 
 });
@@ -286,19 +371,6 @@ function calculateDistance(target,destination) {
 	  var z2 = -x2-y2;
 
 	  return Math.max(Math.abs((x2-x1)),Math.abs((y2-y1)),Math.abs((z2-z1)));
-}
-function removeRadius() {
-console.log("Removing existing unit radius indication.");
-
-var hexes = boardLayer.get('.hex');
-for (var i=0;i<hexes.length;i++) {
-
-if (hexes[i].getFill() == "tan") {
-hexes[i].setFill("white");
-}
-
-}
-boardLayer.draw();
 }
 function createUnitAnimation(shape,current_soldier) {
   console.log("Defining animation for "+current_soldier.name);
@@ -368,7 +440,7 @@ function createUnitAnimation(shape,current_soldier) {
 
            anim.start();        
 }
-function drawMovementRadius(currentHexId,unitAP){
+function drawRadius(currentHexId,unitAP,color){
 if(unitAP == 0) {return;}
 
 var x = parseInt(currentHexId.split(",")[0]) ;
@@ -390,27 +462,73 @@ for (i=0;i<neighborHex.length;i++)
 {
     var shape = neighborHex[i];
     if (neighborHex[i] != undefined){
-    shape.setFill("tan");
+    shape.setFill(color);
     shape.moveToBottom();
-    drawMovementRadius(shape.getId(),unitAP-1);
+    drawRadius(shape.getId(),unitAP-1,color);
     }
 }
 
 }
+function removeRadius(color) {
+console.log("Removing existing unit radius indication");
+
+    var hexes = boardLayer.get('.hex');
+    for (var i=0;i<hexes.length;i++) {
+
+        if (hexes[i].getFill() == color) {
+            hexes[i].setFill("white");
+        }
+
+    }
+}
+function setIcon(target,iconType) {
+console.log("Generating icon for selected unit");
+    if (icon == undefined) {
+      icon =  new Kinetic.Image({
+            name: "icon",
+            width: 25,
+            height: 25,
+            image: iconType
+        });
+
+        icon.setX(target.getX()-10);
+        icon.setY(target.getY()-10);
+        boardLayer.add(icon);
+        boardLayer.draw();
+    }   else {
+        icon.show();
+        icon.setImage(iconType);
+        icon.setX(target.getX()-10);
+        icon.setY(target.getY()-10);
+        icon.moveToTop();
+      //  boardLayer.add(icon);
+        boardLayer.draw();
+    }
+}
+
+boardLayer.add(shootbutton);
+//Set label
+document.getElementById("ranged").style.left  = shootbutton.getX()-130+"px";
+document.getElementById("ranged").style.top  =  shootbutton.getY()+30+"px";
+
+boardLayer.add(meleebutton);
+//Set label
+document.getElementById("melee").style.left  = meleebutton.getX()-205+"px";
+document.getElementById("melee").style.top  =  meleebutton.getY()+30+"px";
 
 boardLayer.add(circle);
 //Set generate button label
-document.getElementById("createSoldiertext").style.left  = circle.getX()-60+"px";
-document.getElementById("createSoldiertext").style.top  =  circle.getY()-30+"px";
+document.getElementById("createSoldiertext").style.left  = circle.getX()+20+"px";
+document.getElementById("createSoldiertext").style.top  =  circle.getY()+30+"px";
 
 boardLayer.add(endturnbutton);
 //Set end turn button label
-document.getElementById("endturntext").style.left  = endturnbutton.getX()+6+"px";
-document.getElementById("endturntext").style.top  =  endturnbutton.getY()+"px";
+document.getElementById("endturntext").style.left  = endturnbutton.getX()+110+"px";
+document.getElementById("endturntext").style.top  =  endturnbutton.getY()+30+"px";
 
 //Set unit stats to the left
 document.getElementById("unitstats").style.left  = stage.getX()+700+"px";
-document.getElementById("unitstats").style.top  =  stage.getY()+100+"px";
+document.getElementById("unitstats").style.top  =  stage.getY()+25+"px";
 
 stage.add(boardLayer);
 
