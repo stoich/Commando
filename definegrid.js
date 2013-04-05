@@ -1,10 +1,10 @@
 //animation sheet for army 0
 var imageObj0 = new Image();
-imageObj0.src = 'images/soldier0.png';
+imageObj0.src = 'images/sol0_1.gif';
 
 //animation sheet for army 1
 var imageObj1 = new Image();
-imageObj1.src = 'images/soldier1.png';
+imageObj1.src = 'images/sol1_1.gif';
 
 var gunIconImage = new Image();
 gunIconImage.src = 'images/gun.png';
@@ -18,7 +18,7 @@ moveIconImage.src = 'images/move.png';
 var animations = {
 		idle: [{
 			x: 0,
-			y: 0,
+			y: 300,
 			width: 50,
 			height: 50
          }] ,
@@ -312,32 +312,34 @@ var currentTurn=0;
 var colorholder;
 var icon;
 
-boardLayer.on("mouseover", function (e) {
-    var shape = e.shape;
-	if(shape.getName() == "hex"){
-	    colorholder = shape.getFill();
-        shape.setFill("#E0EBEB");
-      // shape.moveToBottom();
-      //stage.add(boardLayer);
-	}
-});
-
-boardLayer.on("mouseout", function (e) {
-    var shape = e.shape;
-	if(shape.getName() == "hex"){
-
-	if (colorholder == "tan" || colorholder == "crimson") {
-	shape.setFill(colorholder);
-    return;
-	}
-
-    shape.setFill("white");
-	}
-});
+//boardLayer.on("mouseover", function (e) {
+//    var shape = e.targetNode;
+//	if(shape.getName() == "hex"){
+//        console.log("Here!");
+//	    colorholder = shape.getFill();
+//        shape.setFill("#E0EBEB");
+//        shape.draw();
+//      // shape.moveToBottom();
+//      //stage.add(boardLayer);
+//	}
+//});
+//
+//boardLayer.on("mouseout", function (e) {
+//    var shape = e.targetNode;
+//	if(shape.getName() == "hex"){
+//
+//	if (colorholder == "tan" || colorholder == "crimson") {
+//	shape.setFill(colorholder);
+//    return;
+//	}
+//
+//    shape.setFill("white");
+//	}
+//});
 
 boardLayer.on('click tap', function(e) {
 
-    var shape = e.shape;		
+    var shape = e.targetNode;
 		
 	if(shape.getName() == "hex"){
        console.log("Clicked on hex:"+shape.getId());
@@ -370,7 +372,7 @@ boardLayer.on('click tap', function(e) {
 	
 	if(shape.getName() == "generate"){
     console.log("Generate unit clicked");
-    highlightButtonOnClick(shape)
+    highlightButtonOnClick(shape)      ;
 
     var randomHex;
 
@@ -380,7 +382,7 @@ boardLayer.on('click tap', function(e) {
     }
         var imageObj = new Image();
 
-        var current_image;  //soldier anition
+        var current_image;  //soldier animation
 
         if (currentTurn == 1) {
             current_image = imageObj1;
@@ -389,12 +391,13 @@ boardLayer.on('click tap', function(e) {
         }
 
         var soldier = new Kinetic.Sprite({
-				x : randomHex.getAbsolutePosition().x-25,
-				y : randomHex.getAbsolutePosition().y-25,
+				x : Math.round(randomHex.getAbsolutePosition().x-25),
+				y : Math.round(randomHex.getAbsolutePosition().y-25),
 			    image: current_image,
 				animation: 'idle',
 				animations: animations,
-				frameRate: 7
+				frameRate: 30,
+                index: 0
 			});
 
         //Set unit affinity (1 or 0)
@@ -420,10 +423,11 @@ boardLayer.on('click tap', function(e) {
 
         // add the shape to the layer
 			boardLayer.add(soldier);
+
 			soldier.bar.initBar(boardLayer);
+
 			// add the layer to the stage
 			stage.add(boardLayer);
-			soldier.start();
 	}
 
 	if(shape.getName() == "sol"){
@@ -607,20 +611,20 @@ function calculateDistance(target,destination) {
 }
 function createUnitAnimation(shape,current_soldier) {
 console.log("Defining animation for "+current_soldier.name);
-      
+
            console.log(current_soldier.name+" current location within grid set as "+shape.getId());
 
-           current_soldier.start();
+    var x = Math.round(shape.getAbsolutePosition().x-25);
+    var y = Math.round(shape.getAbsolutePosition().y-25);
+
+    if (x > current_soldier.getX()) {
+        current_soldier.setAnimation('move_right'); }
+    else {  current_soldier.setAnimation('move_left');  }
+
+
 
            //   var difference = function (a, b) { return Math.abs(a - b) }
 
-           var x = shape.getAbsolutePosition().x-25;
-           var y = shape.getAbsolutePosition().y-25;
-
-           if (x > current_soldier.getX()) {
-               current_soldier.setAnimation('move_right'); }
-           else {  current_soldier.setAnimation('move_left');  }
-		   
 		   current_soldier.hideAPBar();
 		   
            var anim = new Kinetic.Animation(function(frame) {
@@ -674,7 +678,9 @@ console.log("Defining animation for "+current_soldier.name);
 
            }, boardLayer);
 
-           anim.start();        
+           anim.start();
+
+    current_soldier.start();
 }
 function drawRadius(currentHexId,unitAP,color){
 if(unitAP == 0) {return;}
