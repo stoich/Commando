@@ -2,9 +2,21 @@
 var imageObj0 = new Image();
 imageObj0.src = 'images/sol0_1.gif';
 
+//castle icon for army 0
+var castleImg0 = new Image();
+castleImg0.src = 'images/castle0.gif';
+
 //animation sheet for army 1
 var imageObj1 = new Image();
 imageObj1.src = 'images/sol1_1.gif';
+
+//castle icon for army 1
+var castleImg1 = new Image();
+castleImg1.src = 'images/castle1.gif';
+
+//icon for gold
+var goldImage = new Image();
+goldImage.src = 'images/gold.gif';
 
 var gunIconImage = new Image();
 gunIconImage.src = 'images/gun.png';
@@ -262,7 +274,7 @@ var boardLayer = new Kinetic.Layer();
 
 // define AP bar class
 function APBar (xS, yS, ap){
-	this.background = new Kinetic.Rect({  
+	this.background = new Kinetic.Rect({
 					x: xS+40,
 					y: yS-15,
 					name: "APbar",
@@ -282,20 +294,20 @@ function APBar (xS, yS, ap){
 					fill: 'red',
 					visible: true
 				});
-	
-	
+
+
 	this.initBar = function(layer){
 		layer.add(this.background);
 		layer.add(this.text);
-	};	
-	
+	};
+
 	this.hideBar = function(){
 		this.background.hide();
 		this.text.hide();
 	};
-	
+
 	this.showBar = function(x,y,ap){
-		this.background.setX(x+40); 
+		this.background.setX(x+40);
 		this.background.setY(y-20);
 		this.text.setX(x+48);
 		this.text.setY(y-17);
@@ -303,9 +315,12 @@ function APBar (xS, yS, ap){
 		this.background.show();
 		this.text.show();
 	};
-}	
+}
 
 createBoardLayer();
+generateCastle(boardLayer.get("#-4,9")[0],castleImg0,0);
+generateCastle(boardLayer.get("#9,0")[0],castleImg1, 1);
+generateGold(goldImage, 5);
 
 var current_soldier;
 var currentTurn=0;
@@ -337,22 +352,23 @@ var icon;
 //	}
 //});
 
+//Handle all the clicks
 boardLayer.on('click tap', function(e) {
 
     var shape = e.targetNode;
-		
+
 	if(shape.getName() == "hex"){
        console.log("Clicked on hex:"+shape.getId());
 
        if (current_soldier != undefined && icon != undefined && icon.getImage() == moveIconImage) { //Time to move soldier if we're in Move mode
- 
+
        var distance = calculateDistance(current_soldier, shape);
 	   console.log("Distance for requested movement calculated as:"+distance);
-       
+
 	   if (distance > current_soldier.AP) {
 	   console.log("Not enough AP to reach destination hex!");
 	   } else {
- 
+
 	   current_soldier.currentHexId = shape.getId();        //Set new location for soldier
 	   createUnitAnimation(shape,current_soldier);          //Animate soldier movement
 	   removeRadius("tan");                                 //Remove movement radius
@@ -363,85 +379,29 @@ boardLayer.on('click tap', function(e) {
 	   document.getElementById("ap").innerText = current_soldier.AP; //Update AP in GUI
 	   current_soldier = undefined;                                    //Unselect soldier
 	   }
-         
+
        } else {
            document.getElementById("name").innerText = "";
 		   document.getElementById("ap").innerText = "";
        }
 	}
-	
+
 	if(shape.getName() == "generate"){
-    console.log("Generate unit clicked");
-    highlightButtonOnClick(shape)      ;
-
-    var randomHex;
-
-    //Loop to make sure random combination exists.
-    while (randomHex == undefined) {
-        randomHex = boardLayer.get("#"+getRandom(-4,9)+","+getRandom(0,9))[0];
-    }
-        var imageObj = new Image();
-
-        var current_image;  //soldier animation
-
-        if (currentTurn == 1) {
-            current_image = imageObj1;
-        }  else {
-            current_image = imageObj0;
-        }
-
-        var soldier = new Kinetic.Sprite({
-				x : Math.round(randomHex.getAbsolutePosition().x-25),
-				y : Math.round(randomHex.getAbsolutePosition().y-25),
-			    image: current_image,
-				animation: 'idle',
-				animations: animations,
-				frameRate: 30,
-                index: 0
-			});
-
-        //Set unit affinity (1 or 0)
-        soldier.affinity = currentTurn;
-		soldier.AP = 3;
-        soldier.HP = 100;
-
-		soldier.name = getName(5,10);    //name and setName are different things!
-        soldier.setName("sol");          //name and setName are different things!
-        soldier.currentHexId = randomHex.getId(); //Which hex does soldier belong to
-		soldier.bar = new APBar(soldier.getX(), soldier.getY(), soldier.AP, boardLayer);
-		
-		//create soldier methods for handling AP bar
-		soldier.showAPBar = function(){
-			this.bar.showBar(this.getX(),this.getY(), this.AP);
-		};
-		soldier.hideAPBar = function(){
-			this.bar.hideBar();
-		};	
-
-		console.log("Created: "+soldier.name +" at "+soldier.getX() + " : " + soldier.getY());
-        console.log(soldier.name+"current location within grid set as "+soldier.currentHexId);
-
-        // add the shape to the layer
-			boardLayer.add(soldier);
-
-			soldier.bar.initBar(boardLayer);
-
-			// add the layer to the stage
-			stage.add(boardLayer);
+      generateUnit(shape,0);
 	}
 
 	if(shape.getName() == "sol"){
-        highlightButtonOnClick(shape)
-		
+      //  highlightButtonOnClick(shape)
+
 		document.getElementById("name").textContent = shape.name;
 		document.getElementById("ap").textContent = shape.AP;
         document.getElementById("hp").textContent = shape.HP;
 
         if (shape.affinity == currentTurn)      {	   //You clicked on a friendly
-        
+
 		console.log("Selected: "+shape.name);
-		current_soldier = shape; //Unit is now selected;	
-		
+		current_soldier = shape; //Unit is now selected;
+
 		console.log("Drawing radius for possible unit movement") ;
         removeRadius("tan");
         removeRadius("crimson");
@@ -487,7 +447,7 @@ boardLayer.on('click tap', function(e) {
 
 
         }
-		
+
 	}
 
     if(shape.getName() == "endturn"){
@@ -556,6 +516,48 @@ boardLayer.on('click tap', function(e) {
         }
     }
 
+    if(shape.getName() == "gold")      {
+        console.log("Clicked on hex:"+shape.getId());
+
+        if (current_soldier != undefined && icon != undefined && icon.getImage() == moveIconImage) { //Time to move soldier if we're in Move mode
+
+            var distance = calculateDistance(current_soldier, shape);
+            console.log("Distance for requested movement calculated as:"+distance);
+
+            if (distance > current_soldier.AP) {
+                console.log("Not enough AP to reach destination hex!");
+            } else {
+
+                current_soldier.currentHexId = shape.currentHexId; //!!!!!!!!!!!!!!! IMPORTANT: soldier hex is set as the hex of gold (not hold itself)
+                createUnitAnimation(shape,current_soldier);          //Animate soldier movement
+                removeRadius("tan");                                 //Remove movement radius
+                icon.hide();
+                //moveIcon.hide();                                   //Remove movement icon
+                //  boardLayer.draw();
+                current_soldier.AP = current_soldier.AP-distance;    //Update AP
+                document.getElementById("ap").innerText = current_soldier.AP; //Update AP in GUI
+                                      //Unselect soldier
+
+                var hex = boardLayer.get("#"+shape.currentHexId)[0];
+               if (current_soldier.affinity == 0) {
+                    hex.setStroke("red");
+                    hex.setStrokeWidth(4);
+                    shape.affinity = 0;
+                }   else                     {
+                        hex.setStroke("blue");
+                        hex.setStrokeWidth(4);
+                        shape.affinity = 1;
+                }
+
+                current_soldier = undefined;
+            }
+
+        } else {
+            document.getElementById("name").innerText = "";
+            document.getElementById("ap").innerText = "";
+        }
+    }
+
 });
 
 function attack(current_soldier,target,animation,damage) {
@@ -591,17 +593,21 @@ if (target.HP <1) {
 function getRandom(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
-function calculateDistance(target,destination) {  
-	  var x1 = parseInt(target.currentHexId.split(",")[0]) ;
-      var y1 = parseInt(target.currentHexId.split(",")[1]) ;
+function calculateDistance(target,destination) {
+    if(target.getName() == "hex"){
+        var x1 = parseInt(target.getId().split(",")[0]) ;
+        var y1 = parseInt(target.getId().split(",")[1]) ;
+    }   else {
+        var x1 = parseInt(target.currentHexId.split(",")[0]) ;
+        var y1 = parseInt(target.currentHexId.split(",")[1]) ;
+    }
+
 	  var z1 = -x1-y1;
 
       if(destination.getName() == "hex"){
 	  var x2 = parseInt(destination.getId().split(",")[0]) ;
       var y2 = parseInt(destination.getId().split(",")[1]) ;
-      }
-
-      if(destination.getName() == "sol"){
+      }      else {
         var x2 = parseInt(destination.currentHexId.split(",")[0]) ;
         var y2 = parseInt(destination.currentHexId.split(",")[1]) ;
       }
@@ -626,12 +632,12 @@ console.log("Defining animation for "+current_soldier.name);
            //   var difference = function (a, b) { return Math.abs(a - b) }
 
 		   current_soldier.hideAPBar();
-		   
+
            var anim = new Kinetic.Animation(function(frame) {
 			   boardLayer.setListening(false);
 			   var linearSpeed = 200;
 			   var linearDistEachFrame = linearSpeed * frame.timeDiff / 1000;
-		  
+
                if (current_soldier.getX() == x && current_soldier.getY() == y ) {
                    anim.stop();
                    current_soldier.stop();
@@ -758,6 +764,138 @@ function highlightButtonOnClick(shape) {
         shape.setFill(previous)},125    );
        // boardLayer.draw();
 }
+function generateCastle(hex,castleIcon,affinity) {
+    var castleAnimation = {
+    idle: [{
+        x: 0,
+        y: 0,
+        width: 50,
+        height: 50
+    }]     };
+
+    console.log("Creating castle for army "+affinity);
+
+    var castle = new Kinetic.Sprite({
+        x : Math.round(hex.getAbsolutePosition().x-25),
+        y : Math.round(hex.getAbsolutePosition().y-25),
+        id: "castle"+affinity,
+        name : "castle",
+        image: castleIcon,
+        animation: 'idle',
+        animations: castleAnimation,
+        frameRate: 1,
+        index: 0
+    });
+
+    castle.currentHexId = hex.getId();
+    castle.affinity = affinity;
+    castle.HP = 300;
+    boardLayer.add(castle);
+
+    castle.start();
+}
+function generateUnit(shape,onDemand) {
+    console.log("Generate unit clicked");
+    highlightButtonOnClick(shape)      ;
+
+    var randomHex;
+
+    while (randomHex == undefined) {
+        randomHex = boardLayer.get("#"+getRandom(-4,9)+","+getRandom(0,9))[0];
+    }
+
+     if (onDemand == 0) {
+        var castle = boardLayer.get("#castle"+currentTurn)[0];
+        while (randomHex == undefined || calculateDistance(castle,randomHex) != 1 ) {         //Generate unit close to castle
+            randomHex = boardLayer.get("#"+getRandom(-4,9)+","+getRandom(0,9))[0];
+        }
+
+    }
+
+    var imageObj = new Image();
+
+    var current_image;  //soldier animation
+
+    if (currentTurn == 1) {
+        current_image = imageObj1;
+    }  else {
+        current_image = imageObj0;
+    }
+
+    var soldier = new Kinetic.Sprite({
+        x : Math.round(randomHex.getAbsolutePosition().x-25),
+        y : Math.round(randomHex.getAbsolutePosition().y-25),
+        image: current_image,
+        animation: 'idle',
+        animations: animations,
+        frameRate: 30,
+        index: 0
+    });
+
+    //Set unit affinity (1 or 0)
+    soldier.affinity = currentTurn;
+    soldier.AP = 3;
+    soldier.HP = 100;
+
+    soldier.name = getName(5,10);    //name and setName are different things!
+    soldier.setName("sol");          //name and setName are different things!
+    soldier.currentHexId = randomHex.getId(); //Which hex does soldier belong to
+    soldier.bar = new APBar(soldier.getX(), soldier.getY(), soldier.AP, boardLayer);
+
+    //create soldier methods for handling AP bar
+    soldier.showAPBar = function(){
+        this.bar.showBar(this.getX(),this.getY(), this.AP);
+    };
+    soldier.hideAPBar = function(){
+        this.bar.hideBar();
+    };
+
+    console.log("Created: "+soldier.name +" at "+soldier.getX() + " : " + soldier.getY());
+    console.log(soldier.name+"current location within grid set as "+soldier.currentHexId);
+
+    // add the shape to the layer
+    boardLayer.add(soldier);
+
+    soldier.bar.initBar(boardLayer);
+
+    // add the layer to the stage
+    stage.add(boardLayer);
+}
+function generateGold(goldImage, count) {
+    if (count == 0) {
+        return;
+    }
+
+    var castle0 = boardLayer.get("#castle0")[0];
+    var castle1 = boardLayer.get("#castle1")[0];
+
+    var randomHex;
+
+    while (randomHex == undefined) {
+        randomHex = boardLayer.get("#"+getRandom(-4,9)+","+getRandom(0,9))[0];
+    }
+
+    while (randomHex == undefined || calculateDistance(randomHex,castle0)<4 || calculateDistance(randomHex,castle1) <4 ) {
+        randomHex = boardLayer.get("#"+getRandom(-4,9)+","+getRandom(0,9))[0];
+    }
+
+    var gold = new Kinetic.Image({
+        x : Math.round(randomHex.getAbsolutePosition().x-25),
+        y: Math.round(randomHex.getAbsolutePosition(). y-25),
+        id: "gold"+count,
+        name: "gold",
+        image: goldImage,
+        width: 50,
+        height: 50
+    });
+
+    gold.currentHexId = randomHex.getId();
+
+    boardLayer.add(gold);
+
+    generateGold(goldImage, count-1);
+}
+
 
 boardLayer.add(shootbutton);
 //Set label
@@ -794,7 +932,7 @@ function createBoardLayer(rows, cols) {
     var strokeColor = "#CCCCCC";
     var x;
     var y;
-    
+
     for(colIdx = 0; colIdx < cols; colIdx++) {
         for(rowIdx = 0; rowIdx < rows; rowIdx++) {
 
@@ -824,20 +962,20 @@ function createBoardLayer(rows, cols) {
 
 			var x1;
             var y1;
-			
+
             //"Strighten" hex grid indexing
             if (colIdx %2 == 0) {
 			    x1=rowIdx-colIdx/2;
-				y1 = colIdx 
+				y1 = colIdx
                 hexagon.setId(x1+ "," +y1);
             }   else {
 			    x1 = rowIdx -(colIdx-1)/2;
-				y1 = colIdx 
+				y1 = colIdx
                 hexagon.setId(x1 + "," +y1);
             }
 
            //Grid numbering. Uncomment this to see x,y,z indexing
-      /*     var complexText = new Kinetic.Text({
+   /*        var complexText = new Kinetic.Text({
                 x: x-10,
                 y: y-10,
          //       text: rowIdx + "," +colIdx ,
@@ -852,14 +990,14 @@ function createBoardLayer(rows, cols) {
             if (colIdx %2 == 0) {
                 var x = rowIdx-colIdx/2;
                 var y =  colIdx;
-                complexText.setText(x+ "," +y+","+(-x-y));
+                complexText.setText(x+ "," +y);
             }   else {
                 var x = rowIdx -(colIdx-1)/2
                 var y =  colIdx;
-                complexText.setText(x + "," +y+","+(-x-y));
+                complexText.setText(x + "," +y);
             }
 
-            boardLayer.add(complexText);*/
+            boardLayer.add(complexText);         */
 
             hexagon.moveToBottom();
             boardLayer.add(hexagon);
