@@ -324,8 +324,19 @@ generateGold(goldImage, 5);
 
 var current_soldier;
 var currentTurn=0;
-var colorholder;
+//var colorholder;
 var icon;
+var army = new Array();
+
+army[0] = new Object();
+army[0].color = "red";
+army[0].income = 3;
+army[0].gold = 10;
+
+army[1] = new Object();
+army[1].color = "blue";
+army[1].income = 3;
+army[1].gold = 10;
 
 //boardLayer.on("mouseover", function (e) {
 //    var shape = e.targetNode;
@@ -387,7 +398,14 @@ boardLayer.on('click tap', function(e) {
 	}
 
 	if(shape.getName() == "generate"){
-      generateUnit(shape,0);
+      if (army[currentTurn].gold < 10) {
+          alert("Not enough gold. Unit costs 10");
+      }  else {
+          generateUnit(shape,0);
+          army[currentTurn].gold-=10;
+          document.getElementById("gold_"+army[currentTurn].color).textContent =  army[currentTurn].color +" gold :"+army[currentTurn].gold;
+      }
+
 	}
 
 	if(shape.getName() == "sol"){
@@ -467,6 +485,10 @@ boardLayer.on('click tap', function(e) {
          units[i].showAPBar();
         }
 
+      //Give the armies some cash
+     army[currentTurn].gold+=army[currentTurn].income;
+     document.getElementById("gold_"+army[currentTurn].color).textContent =  army[currentTurn].color +" gold :"+army[currentTurn].gold;
+
        if(currentTurn == 1) {
            currentTurn=0;
            console.log("Army 1 turn ended. Army 0 to move");
@@ -475,6 +497,7 @@ boardLayer.on('click tap', function(e) {
            console.log("Army 0 turn ended. Army 1 to move");
        }
 
+        alert("Turn ended!");
     }
 
     if(shape.getName() == "shootbutton") {
@@ -528,7 +551,7 @@ boardLayer.on('click tap', function(e) {
                 console.log("Not enough AP to reach destination hex!");
             } else {
 
-                current_soldier.currentHexId = shape.currentHexId; //!!!!!!!!!!!!!!! IMPORTANT: soldier hex is set as the hex of gold (not hold itself)
+                current_soldier.currentHexId = shape.currentHexId; //!!!!!!!!!!!!!!! IMPORTANT: soldier hex is set as the hex the gold belongs to (not gold itself)
                 createUnitAnimation(shape,current_soldier);          //Animate soldier movement
                 removeRadius("tan");                                 //Remove movement radius
                 icon.hide();
@@ -543,10 +566,14 @@ boardLayer.on('click tap', function(e) {
                     hex.setStroke("red");
                     hex.setStrokeWidth(4);
                     shape.affinity = 0;
+                    army[0].income+=5;
+                    document.getElementById("income_red").textContent = "(+"+army[0].income+")" ;
                 }   else                     {
                         hex.setStroke("blue");
                         hex.setStrokeWidth(4);
                         shape.affinity = 1;
+                        army[1].income+=5;
+                        document.getElementById("income_blue").textContent = "(+"+army[1].income+")" ;
                 }
 
                 current_soldier = undefined;
@@ -556,6 +583,36 @@ boardLayer.on('click tap', function(e) {
             document.getElementById("name").innerText = "";
             document.getElementById("ap").innerText = "";
         }
+    }
+
+    if(shape.getName() == "castle") {
+
+            if (icon == undefined || icon == moveIconImage) {
+                alert("Castle:"+shape.HP);
+            }
+
+            if (icon != undefined && icon.getImage() == gunIconImage && calculateDistance(current_soldier, shape)<3) {
+                console.log("Preparing to fire at enemy");
+                attack(current_soldier,shape,"attack_gun",25);
+                current_soldier.AP = 0;
+                current_soldier.showAPBar();
+                current_soldier = undefined;
+                removeRadius("crimson");
+                icon.hide();
+                icon = undefined;
+            }
+
+            if (icon != undefined && icon.getImage() == axeIconImage && calculateDistance(current_soldier, shape)<2) {
+                console.log("Preparing to melee enemy");
+                attack(current_soldier,shape,"attack_axe",50);
+                current_soldier.AP = 0;
+                current_soldier.showAPBar();
+                current_soldier = undefined;
+                removeRadius("crimson");
+                icon.hide();
+                icon = undefined;
+            }
+
     }
 
 });
@@ -787,9 +844,10 @@ function generateCastle(hex,castleIcon,affinity) {
         index: 0
     });
 
+    castle.name = "castle"+affinity;
     castle.currentHexId = hex.getId();
     castle.affinity = affinity;
-    castle.HP = 300;
+    castle.HP = 200;
     boardLayer.add(castle);
 
     castle.start();
@@ -895,34 +953,6 @@ function generateGold(goldImage, count) {
 
     generateGold(goldImage, count-1);
 }
-
-
-boardLayer.add(shootbutton);
-//Set label
-document.getElementById("ranged").style.left  = shootbutton.getX()-130+"px";
-document.getElementById("ranged").style.top  =  shootbutton.getY()+30+"px";
-
-boardLayer.add(meleebutton);
-//Set label
-document.getElementById("melee").style.left  = meleebutton.getX()-205+"px";
-document.getElementById("melee").style.top  =  meleebutton.getY()+30+"px";
-
-boardLayer.add(generatebutton);
-//Set generate button label
-document.getElementById("createSoldiertext").style.left  = generatebutton.getX()+20+"px";
-document.getElementById("createSoldiertext").style.top  =  generatebutton.getY()+30+"px";
-
-boardLayer.add(endturnbutton);
-//Set end turn button label
-document.getElementById("endturntext").style.left  = endturnbutton.getX()+110+"px";
-document.getElementById("endturntext").style.top  =  endturnbutton.getY()+30+"px";
-
-//Set unit stats to the left
-document.getElementById("unitstats").style.left  = stage.getX()+700+"px";
-document.getElementById("unitstats").style.top  =  stage.getY()+25+"px";
-
-stage.add(boardLayer);
-
 function createBoardLayer(rows, cols) {
     var rows = rows || 10;
     var cols = cols || 10;
@@ -950,57 +980,83 @@ function createBoardLayer(rows, cols) {
             }
 
             var hexagon = new Kinetic.RegularPolygon({
-             //   id: "tile-row" + colIdx + "-col-" + rowIdx,
+                //   id: "tile-row" + colIdx + "-col-" + rowIdx,
                 x: x,
                 y: y,
                 sides: 6,
                 radius: hexRadius,
                 stroke: strokeColor,
                 strokeWidth: 1,
-				name: 'hex'
+                name: 'hex'
             });
 
-			var x1;
+            var x1;
             var y1;
 
             //"Strighten" hex grid indexing
             if (colIdx %2 == 0) {
-			    x1=rowIdx-colIdx/2;
-				y1 = colIdx
+                x1=rowIdx-colIdx/2;
+                y1 = colIdx
                 hexagon.setId(x1+ "," +y1);
             }   else {
-			    x1 = rowIdx -(colIdx-1)/2;
-				y1 = colIdx
+                x1 = rowIdx -(colIdx-1)/2;
+                y1 = colIdx
                 hexagon.setId(x1 + "," +y1);
             }
 
-           //Grid numbering. Uncomment this to see x,y,z indexing
-   /*        var complexText = new Kinetic.Text({
-                x: x-10,
-                y: y-10,
-         //       text: rowIdx + "," +colIdx ,
-                fontSize: 12,
-                fontFamily: 'Calibri',
-                fill: '#555',
-                width: 30    ,
-                padding: 0,
-                align: 'center'
-            });
+            //Grid numbering. Uncomment this to see x,y,z indexing
+            /*        var complexText = new Kinetic.Text({
+             x: x-10,
+             y: y-10,
+             //       text: rowIdx + "," +colIdx ,
+             fontSize: 12,
+             fontFamily: 'Calibri',
+             fill: '#555',
+             width: 30    ,
+             padding: 0,
+             align: 'center'
+             });
 
-            if (colIdx %2 == 0) {
-                var x = rowIdx-colIdx/2;
-                var y =  colIdx;
-                complexText.setText(x+ "," +y);
-            }   else {
-                var x = rowIdx -(colIdx-1)/2
-                var y =  colIdx;
-                complexText.setText(x + "," +y);
-            }
+             if (colIdx %2 == 0) {
+             var x = rowIdx-colIdx/2;
+             var y =  colIdx;
+             complexText.setText(x+ "," +y);
+             }   else {
+             var x = rowIdx -(colIdx-1)/2
+             var y =  colIdx;
+             complexText.setText(x + "," +y);
+             }
 
-            boardLayer.add(complexText);         */
+             boardLayer.add(complexText);         */
 
             hexagon.moveToBottom();
             boardLayer.add(hexagon);
         }
     }
 }
+
+boardLayer.add(shootbutton);
+//Set label
+document.getElementById("ranged").style.left  = shootbutton.getX()-130+"px";
+document.getElementById("ranged").style.top  =  shootbutton.getY()+30+"px";
+
+boardLayer.add(meleebutton);
+//Set label
+document.getElementById("melee").style.left  = meleebutton.getX()-205+"px";
+document.getElementById("melee").style.top  =  meleebutton.getY()+30+"px";
+
+boardLayer.add(generatebutton);
+//Set generate button label
+document.getElementById("createSoldiertext").style.left  = generatebutton.getX()+20+"px";
+document.getElementById("createSoldiertext").style.top  =  generatebutton.getY()+30+"px";
+
+boardLayer.add(endturnbutton);
+//Set end turn button label
+document.getElementById("endturntext").style.left  = endturnbutton.getX()+110+"px";
+document.getElementById("endturntext").style.top  =  endturnbutton.getY()+30+"px";
+
+//Set unit stats to the left
+document.getElementById("unitstats").style.left  = stage.getX()+700+"px";
+document.getElementById("unitstats").style.top  =  stage.getY()+25+"px";
+
+stage.add(boardLayer);
