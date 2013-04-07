@@ -8,7 +8,8 @@
 user-select: none;
 user-select: none;
 font-family:Lucida Console;
- position:relative;z-index:1;
+z-index:1;
+position: relative;
 }
 
 .noselect
