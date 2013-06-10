@@ -218,8 +218,8 @@ var animations = {
 
 var stage = new Kinetic.Stage({
     container: 'container',
-    width: 850,
-    height: 550
+    width: 1500,
+    height: 1500
 });
 
 var shootbutton = new Kinetic.Rect({  //Ranged attack button
@@ -272,10 +272,10 @@ var endturnbutton = new Kinetic.Rect({    //End turn button
 
 var boardLayer = new Kinetic.Layer();
 
-createBoardLayer();
-generateCastle(boardLayer.get("#-4,9")[0],castleImg0,0,boardLayer);
-generateCastle(boardLayer.get("#9,0")[0],castleImg1, 1,boardLayer);
-generateGold(goldImage, 5,boardLayer);
+createBoardLayer(4,5);
+//generateCastle(boardLayer.get("#-4,9")[0],castleImg0,0,boardLayer);
+//generateCastle(boardLayer.get("#9,0")[0],castleImg1, 1,boardLayer);
+//generateGold(goldImage, 5,boardLayer);
 
 var current_soldier;
 var currentTurn=0;
@@ -557,18 +557,69 @@ boardLayer.on('click tap', function(e) {
 
 });
 
-function createBoardLayer(rows, cols) {
-    var rows = rows || 10;
-    var cols = cols || 10;
+//Create a segment map; each segment is of dimension 5x5 hexes
+function createBoardLayer(segmentsOnEachSide,segmentSize) {
+
+    if (segmentsOnEachSide < 1) {
+        alert("Number of segments must be greater than one");
+        return;
+    }
+
+    var rows = segmentsOnEachSide*segmentSize;
+    var cols = segmentsOnEachSide*segmentSize;
     var rowIdx;
     var colIdx;
-    var hexRadius = 35;
-    var strokeColor = "#CCCCCC";
+
+    var redCastlePos =  getCastlePosition(segmentsOnEachSide,1) ;
+    var blueCastlePos = getCastlePosition(segmentsOnEachSide,0) ;
+    alert("Red:"+redCastlePos);
+    alert("blue:"+blueCastlePos);
+
     var x;
     var y;
 
-    for(colIdx = 0; colIdx < cols; colIdx++) {
-        for(rowIdx = 0; rowIdx < rows; rowIdx++) {
+    var colors = new Array("red","blue","green","grey","blue","green","grey","red","green","grey","blue","green","grey","red","green","grey");
+    var segCount=0;
+
+    var currentSegment = 0;
+
+
+    for (var i=0; i < segmentsOnEachSide; i++) {
+        for (var j=0; j < segmentsOnEachSide; j++){
+
+            if(currentSegment == redCastlePos){
+                generateSegment(i*segmentSize,i*segmentSize+segmentSize,j*segmentSize,j*segmentSize+segmentSize,colors[currentSegment],true,false);
+            }  else if(currentSegment == blueCastlePos){
+                generateSegment(i*segmentSize,i*segmentSize+segmentSize,j*segmentSize,j*segmentSize+segmentSize,colors[currentSegment],false,true);
+            }  else{
+                generateSegment(i*segmentSize,i*segmentSize+segmentSize,j*segmentSize,j*segmentSize+segmentSize,colors[currentSegment],false,false);
+            }
+
+            currentSegment++;
+        }
+    }
+
+}
+
+function generateSegment(minCol,maxCol,minRow,maxRow,color,redCastle, blueCastle) {
+    var backgroundColor = color;
+    var goldCount = 2;
+
+    var hexRadius = 35;
+    var strokeColor = "#CCCCCC";
+    var currentHex = 0;
+
+    var castlePosition = -1;
+    //segmentSize = maxCol - minCol
+    if(redCastle){
+        castlePosition = getCastlePosition((maxCol - minCol),1);
+    }
+    if(blueCastle){
+        castlePosition = getCastlePosition((maxCol - minCol),0);
+    }
+
+    for(colIdx = minCol; colIdx < maxCol; colIdx++) {
+        for(rowIdx = minRow; rowIdx < maxRow; rowIdx++) {
 
             //compute x coordinate of hex tile
             //I did my best to reduce the magic numbers ;)
@@ -583,6 +634,19 @@ function createBoardLayer(rows, cols) {
                 y = y - colIdx * hexRadius / 2;
             }
 
+            var dice = getRandom(1,100);
+
+            color = backgroundColor;
+
+            if (dice < 30 && currentHex != castlePosition) {
+                color = 'black';
+            }
+
+            if (dice >= 30 && dice <35 && goldCount != 0 && !redCastle && !blueCastle) {
+                color = 'yellow';
+                goldCount--;
+            }
+
             var hexagon = new Kinetic.RegularPolygon({
                 //   id: "tile-row" + colIdx + "-col-" + rowIdx,
                 x: x,
@@ -590,6 +654,7 @@ function createBoardLayer(rows, cols) {
                 sides: 6,
                 radius: hexRadius,
                 stroke: strokeColor,
+                fill: color,
                 strokeWidth: 1,
                 name: 'hex'
             });
@@ -608,53 +673,78 @@ function createBoardLayer(rows, cols) {
                 hexagon.setId(x1 + "," +y1);
             }
 
-            //Grid numbering. Uncomment this to see x,y,z indexing
-            /*        var complexText = new Kinetic.Text({
-             x: x-10,
-             y: y-10,
-             //       text: rowIdx + "," +colIdx ,
-             fontSize: 12,
-             fontFamily: 'Calibri',
-             fill: '#555',
-             width: 30    ,
-             padding: 0,
-             align: 'center'
-             });
+            if (redCastle && currentHex == castlePosition) {
+            generateCastle(hexagon,castleImg0,0,boardLayer);
+            }
 
-             if (colIdx %2 == 0) {
-             var x = rowIdx-colIdx/2;
-             var y =  colIdx;
-             complexText.setText(x+ "," +y);
-             }   else {
-             var x = rowIdx -(colIdx-1)/2
-             var y =  colIdx;
-             complexText.setText(x + "," +y);
-             }
+            if (blueCastle && currentHex == castlePosition) {
+                generateCastle(hexagon,castleImg1,1,boardLayer);
+            }
 
-             boardLayer.add(complexText);         */
+//            //Grid numbering. Uncomment this to see x,y,z indexing
+//            var complexText = new Kinetic.Text({
+//                x: x-10,
+//                y: y-10,
+//                //       text: rowIdx + "," +colIdx ,
+//                fontSize: 12,
+//                fontFamily: 'Calibri',
+//                fill: '#555',
+//                width: 30    ,
+//                padding: 0,
+//                align: 'center'
+//            });
+//
+//            if (colIdx %2 == 0) {
+//                var x = rowIdx-colIdx/2;
+//                var y =  colIdx;
+//                complexText.setText(x+ "," +y);
+//            }   else {
+//                var x = rowIdx -(colIdx-1)/2
+//                var y =  colIdx;
+//                complexText.setText(x + "," +y);
+//            }
+//
+//            boardLayer.add(complexText);
 
-            hexagon.moveToBottom();
             boardLayer.add(hexagon);
+            hexagon.moveToBottom();
+            currentHex++;
         }
     }
 }
 
-boardLayer.add(shootbutton);
+// left side = 1 , right side = 0
+function getCastlePosition(segmentsOnEachSide,side){
+   var possiblePositions = new Array();
+   var totalSegments = segmentsOnEachSide*segmentsOnEachSide;
+   for(var i = 0;i<totalSegments;i++){
+       if(i%segmentsOnEachSide == 0 && side == 1){
+          possiblePositions.push(i);
+       }
+
+       if((i+1)%segmentsOnEachSide == 0 && side == 0){
+          possiblePositions.push(i);
+       }
+   }
+   return possiblePositions[getRandom(0,possiblePositions.length -1)];
+}
+
+//boardLayer.add(shootbutton);
 //Set label
 document.getElementById("ranged").style.left  = shootbutton.getX()-180+"px";
 document.getElementById("ranged").style.top  =  shootbutton.getY()+30+"px";
 
-boardLayer.add(meleebutton);
+//boardLayer.add(meleebutton);
 //Set label
 document.getElementById("melee").style.left  = meleebutton.getX()-255+"px";
 document.getElementById("melee").style.top  =  meleebutton.getY()+30+"px";
 
-boardLayer.add(generatebutton);
+//boardLayer.add(generatebutton);
 //Set generate button label
 document.getElementById("createSoldiertext").style.left  = generatebutton.getX()+20+"px";
 document.getElementById("createSoldiertext").style.top  =  generatebutton.getY()+30+"px";
 
-boardLayer.add(endturnbutton);
+//boardLayer.add(endturnbutton);
 //Set end turn button label
 document.getElementById("endturntext").style.left  = endturnbutton.getX()+110+"px";
 document.getElementById("endturntext").style.top  =  endturnbutton.getY()+30+"px";
