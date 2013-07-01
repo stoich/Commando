@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="CommandoServer" default="help" basedir=".">
+	<description>Commando game server</description>
+	<property file="build.properties" />
+
+	<target name="help">
+			<echo message="use: ant [one of the following]"/>
+			<echo message="clean     - removes any artifacts generated"/>
+			<echo message="compile   - process all java files"/>
+			<echo message="build     = compile"/>
+			<echo message="test      - compile and unit test"/>
+			<echo message="war       - generate WAR file for deployment"/>
+			<echo message="all       - compile all, run tests, and creates WAR file"/>
+		</target>
+			
+		<target name="clean">
+			<delete dir="${build.dir}" failonerror="false" />
+			<delete dir="${build.test.dir}"  failonerror="false"/>
+			<delete dir="${tmp.dir}" failonerror="false" />
+		</target>
+
+		<target name="init">
+			<mkdir dir="${build.dir}"/>
+		</target>
+		
+		<target name="compile" depends="init">
+			<javac srcdir="${src.java.dir}" 
+				   destdir="${build.dir}" 
+				   debug="${java.compile.debug}" 
+				   optimize="${java.compile.optimize}" 
+				   target="${java.compile.version}"
+				   source="${java.compile.version}"
+				   nowarn="${java.compile.nowarn}"
+				   fork="true"
+				   memoryInitialSize="128m"
+				   memoryMaximumSize="128m">
+				<classpath>
+					<fileset dir="${lib.dir}">
+						<include name="*.jar"/>
+					</fileset>	
+					<fileset dir="${lib.www.dir}">
+						<include name="*.jar"/>
+					</fileset>
+				</classpath>
+			</javac>
+
+			<copy todir="${build.dir}">
+				<fileset dir="${src.java.dir}">
+					<exclude name="**/*.java" />
+				</fileset>
+			</copy>
+		</target>
+
+		<target name="build" depends="compile">
+		</target>
+
+		<target name="war" depends="build">
+			<delete file="${build.war}"/>
+			<zip destfile="${build.war}" update="true">
+				<zipfileset dir="${www.dir}" />
+			</zip>
+			<zip destfile="${build.war}" update="true">
+				<zipfileset dir="${src.java.dir}" prefix="WEB-INF/classes">
+					<exclude name="**/*.java"/>
+				</zipfileset>
+			</zip>
+			<zip destfile="${build.war}" update="true">
+				<zipfileset dir="${build.dir}"  prefix="WEB-INF/classes"/>
+			</zip>
+		</target>
+
+		<target name="all" depends="war"/>
+	</project>

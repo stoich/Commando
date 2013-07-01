@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app>
+	<display-name>CommandoServer</display-name>
+	<description>Commando game server</description>
+	
+	<servlet>
+		<servlet-name>mapgen</servlet-name>
+		<description>mapgen</description>
+		<servlet-class>servlets.MapGeneratorServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>mapgen</servlet-name>
+		<url-pattern>/mapgen</url-pattern>
+	</servlet-mapping>
+	
+	<session-config>
+		<!-- 120 minutes -->
+		<session-timeout>120</session-timeout>
+	</session-config>
+</web-app>
