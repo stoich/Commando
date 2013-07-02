@@ -568,8 +568,13 @@ function createBoardLayer(segmentsOnEachSide,segmentSize) {
 	var result = jQuery.ajax( {
 	  	url: "mapgen?seg="+ segmentsOnEachSide +"&size=" + segmentSize,
 	  	success: function(result){
+
+            if (result == "Waiting for second player to join")     {
+                document.writeln("Waiting for second player to join. You should keep refreshing the browser (because we haven't implemented auto-polling yet");
+            }    else {
 	  		var generatedMap = eval(result)	  		
 	  		generateMap(segmentsOnEachSide,segmentSize,generatedMap);
+            }
 	  }
 	} );   
 
