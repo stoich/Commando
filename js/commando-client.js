@@ -767,10 +767,20 @@ stage.add(boardLayer);
         return;
     }
 
+	//username
+	var username = '';
     // open connection
     var connection = new WebSocket('ws://localhost:1337');
 
     connection.onopen = function () {
+	
+	 $( "body" ).prepend("<div id='LoginForm' style='border: thin red solid'><input type='text' id='username'></input><button id='sendName'> Log in </button>  </div>");
+	 $("#sendName").click(function() {
+		username =  $("#username").val();		
+		connection.send(JSON.stringify( { type: 'name', data: username} ));
+		$("#LoginForm").remove();
+	 });
+	 
         // first we want users to enter their names
         //input.removeAttr('disabled').val('').focus();
         //status.text('Choose name:');
@@ -802,10 +812,14 @@ stage.add(boardLayer);
 		
         } else if (json.type === 'map') { // entire message history
             
-			var generatedMap = eval(json.data);	  		
+			var generatedMap = JSON.parse(json.data);	  		
 	  		generateMap(4,5,generatedMap);
 			
-        } else {
+        } else if (json.type === 'autherror') {
+			alert(json.data);
+		} else if (json.type === 'authsuccess') {
+			connection.send(JSON.stringify( { type: 'requestmap', data: username} ));
+		} else {
             console.log('Hmm..., I\'ve never seen JSON like this: ', json);
         }
     };
