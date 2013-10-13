@@ -1,3 +1,6 @@
+$(function () {
+// --- original code ---
+
 //animation sheet for army 0
 var imageObj0 = new Image();
 imageObj0.src = 'images/sol0_1.gif';
@@ -272,7 +275,7 @@ var endturnbutton = new Kinetic.Rect({    //End turn button
 
 var boardLayer = new Kinetic.Layer();
 
-createBoardLayer(4,5);
+
 
 var current_soldier;
 var currentTurn=0;
@@ -558,27 +561,6 @@ boardLayer.on('click tap', function(e) {
 
 
 //Create a segment map; each segment is of dimension 5x5 hexes
-function createBoardLayer(segmentsOnEachSide,segmentSize) {
-
-	if (segmentsOnEachSide < 1) {
-        alert("Number of segments must be greater than one");
-        return;
-    }
-
-	var result = jQuery.ajax( {
-	  	url: "mapgen?seg="+ segmentsOnEachSide +"&size=" + segmentSize,
-	  	success: function(result){
-
-            if (result == "Waiting for second player to join")     {
-                document.writeln("Waiting for second player to join. You should keep refreshing the browser (because we haven't implemented auto-polling yet");
-            }    else {
-	  		var generatedMap = eval(result)	  		
-	  		generateMap(segmentsOnEachSide,segmentSize,generatedMap);
-            }
-	  }
-	} );   
-
-}
 
 function generateMap(segmentsOnEachSide,segmentSize,jsonMap){
 
@@ -770,3 +752,64 @@ document.getElementById("armystats2").style.left  = (stage.getX()+1050)+"px";
 document.getElementById("armystats2").style.top  =  (stage.getY()+25)+"px";
 
 stage.add(boardLayer);
+
+// --- original code ---
+
+// if user is running mozilla then use it's built-in WebSocket
+    window.WebSocket = window.WebSocket || window.MozWebSocket;
+
+    // if browser doesn't support WebSocket, just show some notification and exit
+    if (!window.WebSocket) {
+        content.html($('<p>', { text: 'qj hui, but your browser doesn\'t '
+                                    + 'support WebSockets.'} ));
+        input.hide();
+        $('span').hide();
+        return;
+    }
+
+    // open connection
+    var connection = new WebSocket('ws://localhost:1337');
+
+    connection.onopen = function () {
+        // first we want users to enter their names
+        //input.removeAttr('disabled').val('').focus();
+        //status.text('Choose name:');
+    };
+
+    connection.onerror = function (error) {
+        // just in there were some problems with conenction...
+        // content.html($('<p>', { text: 'Sorry, but there\'s some problem with your '
+        //                            + 'connection or the server is down.</p>' } ));
+    };
+
+    // most important part - incoming messages
+    connection.onmessage = function (message) {
+        // try to parse JSON message. Because we know that the server always returns
+        // JSON this should work without any problem but we should make sure that
+        // the massage is not chunked or otherwise damaged.
+        try {
+            var json = JSON.parse(message.data);
+        } catch (e) {
+            console.log('This doesn\'t look like a valid JSON: ', message.data);
+            return;
+        }
+
+        // NOTE: if you're not sure about the JSON structure
+        // check the server source code above
+        if (json.type === 'notification') { // first response from the server with user's color
+		     
+			 $( "body" ).prepend("<p style='color:red; z-index: 10'>"+ json.data +"</p>");
+		
+        } else if (json.type === 'map') { // entire message history
+            
+			var generatedMap = eval(json.data);	  		
+	  		generateMap(4,5,generatedMap);
+			
+        } else {
+            console.log('Hmm..., I\'ve never seen JSON like this: ', json);
+        }
+    };
+
+});
+
+
