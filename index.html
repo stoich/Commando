@@ -3,10 +3,11 @@
 <head>
 
     <title>hex grid sample</title>
-    <script src="kinetic-v4.4.0.min.js"></script>
-	<script src="classes.js"></script>
-	<script src="utils.js"></script>
-    <script src="namegen.js"></script>    
+    <script src="js/jquery-1.6.2.min.js"></script>
+    <script src="js/kinetic-v4.4.0.min.js"></script>
+	<script src="js/classes.js"></script>
+	<script src="js/utils.js"></script>
+    <script src="js/namegen.js"></script>    
 	<link rel="stylesheet" type="text/css" href="styles/sheet1.css">
     <link rel="stylesheet" href="styles/kendo.common.min.css">
     <link rel="stylesheet" href="styles/kendo.default.min.css">
@@ -16,25 +17,25 @@
 
     <div id="container" class="noselect">
 
-    <div>
+    <div style="display: none">
 	<b id="endturntext"       class="label"> End Turn</b>
     <b id="createSoldiertext" class="label"> Generate (10 gold)</b>
     <b id="ranged"       class="label"> Ranged </b>
     <b id="melee" class="label"> Melee </b>
     </div>
 		
-    <div id="unitstats" style="position:absolute">
+    <div id="unitstats" style="position:absolute; display: none">
     <div class="k-block" ><div class="k-header"><b class="label" style="padding:22px">Name</b></div><b id="name"></b></div>
     <div class="k-block" style="float:left"><div class="k-header"><b class="label" style="padding:22px">AP</b></div><b id="ap"></b></div>
     <div class="k-block" style="float:right"><div class="k-header" style="float:right"><b class="label" style="padding:22px">HP</b></div><b id="hp"></b></div>
     </div>
-	
-	<div id="armystats1" style="position:absolute">
+
+	<div id="armystats1" style="position:absolute;display: none">
     <div class="k-block" ><div class="k-header"><b class="label" style="padding:22px">RED</b></div><b id="gold_red">Gold: 10</b></div>
     <div class="k-block" style="float:left"><div class="k-header"><b class="label" style="padding:22px">Income</b></div><b id="income_red">(+3)</b></div>
     </div>
-	
-	<div id="armystats2" style="position:absolute">
+
+	<div id="armystats2" style="position:absolute;display: none">
     <div class="k-block" ><div class="k-header"><b class="label" style="padding:22px">BLUE</b></div><b id="gold_blue">Gold: 10</b></div>
     <div class="k-block" style="float:left"><div class="k-header"><b class="label" style="padding:22px">Income</b></div><b id="income_blue">(+3)</b></div>
     </div>
@@ -50,7 +51,7 @@
 -->
     </div>
 	
-    <script src="definegrid.js"></script>
+    <script src="js/definegrid.js"></script>
 
     </div>
 

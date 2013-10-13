@@ -218,8 +218,8 @@ var animations = {
 
 var stage = new Kinetic.Stage({
     container: 'container',
-    width: 850,
-    height: 550
+    width: 1500,
+    height: 1500
 });
 
 var shootbutton = new Kinetic.Rect({  //Ranged attack button
@@ -272,20 +272,18 @@ var endturnbutton = new Kinetic.Rect({    //End turn button
 
 var boardLayer = new Kinetic.Layer();
 
-createBoardLayer();
-generateCastle(boardLayer.get("#-4,9")[0],castleImg0,0,boardLayer);
-generateCastle(boardLayer.get("#9,0")[0],castleImg1, 1,boardLayer);
-generateGold(goldImage, 5,boardLayer);
+createBoardLayer(4,5);
 
 var current_soldier;
 var currentTurn=0;
-//var colorholder;
+
 var icon = new Kinetic.Image({
             name: "icon",
             width: 25,
             height: 25,
             image: moveIconImage
 });
+
 boardLayer.add(icon);
 icon.hide();
 var army = new Array();
@@ -557,18 +555,67 @@ boardLayer.on('click tap', function(e) {
 
 });
 
-function createBoardLayer(rows, cols) {
-    var rows = rows || 10;
-    var cols = cols || 10;
+
+
+//Create a segment map; each segment is of dimension 5x5 hexes
+function createBoardLayer(segmentsOnEachSide,segmentSize) {
+
+	if (segmentsOnEachSide < 1) {
+        alert("Number of segments must be greater than one");
+        return;
+    }
+
+	var result = jQuery.ajax( {
+	  	url: "mapgen?seg="+ segmentsOnEachSide +"&size=" + segmentSize,
+	  	success: function(result){
+
+            if (result == "Waiting for second player to join")     {
+                document.writeln("Waiting for second player to join. You should keep refreshing the browser (because we haven't implemented auto-polling yet");
+            }    else {
+	  		var generatedMap = eval(result)	  		
+	  		generateMap(segmentsOnEachSide,segmentSize,generatedMap);
+            }
+	  }
+	} );   
+
+}
+
+function generateMap(segmentsOnEachSide,segmentSize,jsonMap){
+
+	
+
+    var rows = segmentsOnEachSide*segmentSize;
+    var cols = segmentsOnEachSide*segmentSize;
     var rowIdx;
     var colIdx;
-    var hexRadius = 35;
-    var strokeColor = "#CCCCCC";
+
     var x;
     var y;
 
-    for(colIdx = 0; colIdx < cols; colIdx++) {
-        for(rowIdx = 0; rowIdx < rows; rowIdx++) {
+    var segCount=0;
+    var currentSegment = 0;
+
+
+    for (var i=0; i < segmentsOnEachSide; i++) {
+        for (var j=0; j < segmentsOnEachSide; j++){        
+            generateSegment(i*segmentSize,i*segmentSize+segmentSize,j*segmentSize,j*segmentSize+segmentSize,jsonMap[currentSegment],currentSegment);
+            currentSegment++;
+        }
+    }
+}
+
+function generateSegment(minCol,maxCol,minRow,maxRow,segment,segnum) {
+//    var backgroundColor = color;
+    var goldCount = 2;
+
+    var hexRadius = 35;
+    var strokeColor = "#CCCCCC";
+    var currentHex = 0;
+
+    var castlePosition = -1;
+
+    for(colIdx = minCol; colIdx < maxCol; colIdx++) {
+        for(rowIdx = minRow; rowIdx < maxRow; rowIdx++) {
 
             //compute x coordinate of hex tile
             //I did my best to reduce the magic numbers ;)
@@ -583,6 +630,18 @@ function createBoardLayer(rows, cols) {
                 y = y - colIdx * hexRadius / 2;
             }
 
+            var jsonHex =  segment[currentHex]  ;
+
+            var color = "white" ;
+
+            if (jsonHex.color.indexOf("castle") == -1)  {
+            if (jsonHex.color != "default")  {
+            color = jsonHex.color;
+            } else {
+                color = "white";
+            }
+            }
+
             var hexagon = new Kinetic.RegularPolygon({
                 //   id: "tile-row" + colIdx + "-col-" + rowIdx,
                 x: x,
@@ -590,71 +649,111 @@ function createBoardLayer(rows, cols) {
                 sides: 6,
                 radius: hexRadius,
                 stroke: strokeColor,
+                fill: color,
                 strokeWidth: 1,
                 name: 'hex'
             });
 
-            var x1;
-            var y1;
 
-            //"Strighten" hex grid indexing
+                        //Grid numbering. Uncomment this to see x,y,z indexing
+            var complexText = new Kinetic.Text({
+                x: x-10,
+                y: y-10,
+                //       text: rowIdx + "," +colIdx ,
+                fontSize: 12,
+                fontFamily: 'Calibri',
+                fill: 'red',
+                width: 30    ,
+                padding: 0,
+                align: 'center'
+            });
+
             if (colIdx %2 == 0) {
-                x1=rowIdx-colIdx/2;
-                y1 = colIdx
-                hexagon.setId(x1+ "," +y1);
+                var x = rowIdx-colIdx/2;
+                var y =  colIdx;
+                complexText.setText(segnum);
             }   else {
-                x1 = rowIdx -(colIdx-1)/2;
-                y1 = colIdx
-                hexagon.setId(x1 + "," +y1);
+                var x = rowIdx -(colIdx-1)/2
+                var y =  colIdx;
+                complexText.setText(segnum);
             }
 
-            //Grid numbering. Uncomment this to see x,y,z indexing
-            /*        var complexText = new Kinetic.Text({
-             x: x-10,
-             y: y-10,
-             //       text: rowIdx + "," +colIdx ,
-             fontSize: 12,
-             fontFamily: 'Calibri',
-             fill: '#555',
-             width: 30    ,
-             padding: 0,
-             align: 'center'
-             });
+            boardLayer.add(complexText);
 
-             if (colIdx %2 == 0) {
-             var x = rowIdx-colIdx/2;
-             var y =  colIdx;
-             complexText.setText(x+ "," +y);
-             }   else {
-             var x = rowIdx -(colIdx-1)/2
-             var y =  colIdx;
-             complexText.setText(x + "," +y);
-             }
+            hexagon.setId(jsonHex.id);
 
-             boardLayer.add(complexText);         */
+            if (jsonHex.color == "red_castle") {
+            generateCastle(hexagon,castleImg0,0,boardLayer);
+            }
 
-            hexagon.moveToBottom();
+            if (jsonHex.color == "blue_castle") {
+                generateCastle(hexagon,castleImg1,1,boardLayer);
+            }
+
+//            //Grid numbering. Uncomment this to see x,y,z indexing
+//            var complexText = new Kinetic.Text({
+//                x: x-10,
+//                y: y-10,
+//                //       text: rowIdx + "," +colIdx ,
+//                fontSize: 12,
+//                fontFamily: 'Calibri',
+//                fill: '#555',
+//                width: 30    ,
+//                padding: 0,
+//                align: 'center'
+//            });
+//
+//            if (colIdx %2 == 0) {
+//                var x = rowIdx-colIdx/2;
+//                var y =  colIdx;
+//                complexText.setText(x+ "," +y);
+//            }   else {
+//                var x = rowIdx -(colIdx-1)/2
+//                var y =  colIdx;
+//                complexText.setText(x + "," +y);
+//            }
+//
+//            boardLayer.add(complexText);
+
             boardLayer.add(hexagon);
+            hexagon.moveToBottom();
+            currentHex++;
         }
     }
 }
 
-boardLayer.add(shootbutton);
+// left side = 1 , right side = 0
+function getCastlePosition(segmentsOnEachSide,side){
+   var possiblePositions = new Array();
+   var totalSegments = segmentsOnEachSide*segmentsOnEachSide;
+   for(var i = 0;i<totalSegments;i++){
+       if(i%segmentsOnEachSide == 0 && side == 1){
+          possiblePositions.push(i);
+       }
+
+       if((i+1)%segmentsOnEachSide == 0 && side == 0){
+          possiblePositions.push(i);
+       }
+   }
+   return possiblePositions[getRandom(0,possiblePositions.length -1)];
+}
+
+//boardLayer.add(shootbutton);
 //Set label
 document.getElementById("ranged").style.left  = shootbutton.getX()-180+"px";
 document.getElementById("ranged").style.top  =  shootbutton.getY()+30+"px";
 
-boardLayer.add(meleebutton);
+//boardLayer.add(meleebutton);
 //Set label
 document.getElementById("melee").style.left  = meleebutton.getX()-255+"px";
 document.getElementById("melee").style.top  =  meleebutton.getY()+30+"px";
 
-boardLayer.add(generatebutton);
+//boardLayer.add(generatebutton);
 //Set generate button label
 document.getElementById("createSoldiertext").style.left  = generatebutton.getX()+20+"px";
 document.getElementById("createSoldiertext").style.top  =  generatebutton.getY()+30+"px";
 
-boardLayer.add(endturnbutton);
+//boardLayer.add(endturnbutton);
 //Set end turn button label
 document.getElementById("endturntext").style.left  = endturnbutton.getX()+110+"px";
 document.getElementById("endturntext").style.top  =  endturnbutton.getY()+30+"px";
